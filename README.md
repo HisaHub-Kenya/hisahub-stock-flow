@@ -1,73 +1,66 @@
-# Welcome to your Lovable project
+# 📈 HisaHub – MVP
 
-## Project info
+**HisaHub** is a localized stock trading and wealth management platform tailored for the Kenyan market. This MVP version demonstrates core trading functionalities, broker integration, a social community hub, and an AI-powered assistant – all within a mobile-first experience.
 
-**URL**: https://lovable.dev/projects/9804dee2-d562-4299-989f-83c25d959f31
+---
 
-## How can I edit this code?
+## 🚀 Project Status
 
-There are several ways of editing your application.
+> ✅ MVP Stage – Actively being developed for pre-launch testing and user onboarding.  
+> 🧪 Feedback from early testers and partners will guide the next iterations.
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9804dee2-d562-4299-989f-83c25d959f31) and start prompting.
+## 🧠 Core Features
 
-Changes made via Lovable will be committed automatically to this repo.
+- 🔐 **User Authentication** – Secure sign-up and login with Supabase.
+- 📊 **Trading Interface** – Simulated stock buying/selling with multi-broker integration.
+- 💬 **AI Assistant (Invisa)** – Financial assistant for education, support, and analysis.
+- 🌍 **Social Hub** – Real-time news, community chat, and crowd sentiment.
+- 💼 **Portfolio & Wealth Tracker** – View assets, cash, P&L and risk insights.
+- 📱 **Mobile-First Design** – Built for both Android & iOS.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🧰 Tech Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+| Layer          | Technology Used                              |
+| -------------- | --------------------------------------------- |
+| Frontend       | Flutter (Dart) or React Native                |
+| Backend        | Django (Python)                               |
+| Auth & DB      | Supabase (PostgreSQL, Auth)                   |
+| AI Integration | Ollama + Mistral/phi2 via Invisa AI engine    |
+| Hosting        | Firebase + AWS Nairobi                        |
+| Others         | TensorFlow, REST APIs, WebSockets, Figma UI   |
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## ⚙️ Getting Started
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Prerequisites
 
-# Step 3: Install the necessary dependencies.
-npm i
+- Node.js / Dart (depending on frontend)
+- Python 3.10+
+- Supabase CLI
+- Firebase CLI
+- Git
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### Setup
 
-**Edit a file directly in GitHub**
+```bash
+# 1. Clone the repository
+git clone https://github.com/your-org/hisahub.git
+cd hisahub
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+# 2. Set up backend (Django)
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/9804dee2-d562-4299-989f-83c25d959f31) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+# 3. Set up frontend (React Native or Flutter)
+cd ../frontend
+npm install # or flutter pub get
+npm start   # or flutter run
