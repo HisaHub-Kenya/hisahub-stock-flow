@@ -82,38 +82,60 @@ class HomeScreen extends StatelessWidget {
               SafeArea(
                 child: Stack(
                   children: [
-                    // Guest Mode Indicator (Top Left)
+                    // Guest Mode Indicator (Top Left) - Clickable
                     Positioned(
                       top: 8,
                       left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF4C542).withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFF4C542)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.person_outline,
-                              color: Color(0xFF0B1A39),
-                              size: 16,
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: () {
+                            print('Guest indicator tapped!');
+                            context.go('/login');
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
                             ),
-                            const SizedBox(width: 4),
-                            const Text(
-                              'Guest',
-                              style: TextStyle(
-                                color: Color(0xFF0B1A39),
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFFF4C542,
+                              ).withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFF4C542),
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFFF4C542,
+                                  ).withValues(alpha: 0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                          ],
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.person_outline,
+                                  color: Color(0xFF0B1A39),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'Guest',
+                                  style: TextStyle(
+                                    color: Color(0xFF0B1A39),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -121,11 +143,13 @@ class HomeScreen extends StatelessWidget {
                     Positioned(
                       top: 8,
                       right: 8,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => context.go('/login'),
-                          borderRadius: BorderRadius.circular(20),
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: () {
+                            print('Sign In button tapped!');
+                            context.go('/login');
+                          },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,

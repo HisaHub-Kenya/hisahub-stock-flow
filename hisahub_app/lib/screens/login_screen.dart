@@ -56,44 +56,62 @@ class LoginScreen extends StatelessWidget {
                     style: const TextStyle(color: Colors.white),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Login / Register'),
                       ),
                     ),
-                    child: const Text('Login / Register'),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.mobile_friendly),
-                    label: const Text('Login with M-Pesa'),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      child: ElevatedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.mobile_friendly),
+                        label: const Text('Login with M-Pesa'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.go('/kyc');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                      backgroundColor: const Color(0xFFF4C542),
-                      foregroundColor: const Color(0xFF0B1A39),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          context.go('/kyc');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                          backgroundColor: const Color(0xFFF4C542),
+                          foregroundColor: const Color(0xFF0B1A39),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Start KYC Onboarding'),
                       ),
                     ),
-                    child: const Text('Start KYC Onboarding'),
                   ),
                 ],
               ),

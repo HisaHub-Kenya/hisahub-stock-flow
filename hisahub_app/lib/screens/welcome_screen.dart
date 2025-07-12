@@ -24,6 +24,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           'Access the Nairobi Securities Exchange and beyond with our intuitive, low-data platform designed for every Kenyan investor.',
       icon: Icons.trending_up,
       color: Color(0xFF2E7D32),
+      gradient: LinearGradient(
+        colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
     ),
     WelcomeSlide(
       title: 'Smart Investing',
@@ -32,6 +37,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           'Get personalized investment recommendations and market analysis powered by Hisa AI, your personal financial advisor.',
       icon: Icons.psychology,
       color: Color(0xFF1976D2),
+      gradient: LinearGradient(
+        colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
     ),
     WelcomeSlide(
       title: 'Low-Data Optimized',
@@ -40,6 +50,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           'Designed for low-end devices and slow connections. Trade confidently even with limited internet access.',
       icon: Icons.signal_cellular_alt,
       color: Color(0xFFFF6F00),
+      gradient: LinearGradient(
+        colors: [Color(0xFFFF6F00), Color(0xFFFF9800)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
     ),
     WelcomeSlide(
       title: 'Secure & Reliable',
@@ -48,6 +63,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           'Bank-grade security with offline support. Your investments are protected with the highest standards.',
       icon: Icons.security,
       color: Color(0xFFD32F2F),
+      gradient: LinearGradient(
+        colors: [Color(0xFFD32F2F), Color(0xFFF44336)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
     ),
   ];
 
@@ -130,14 +150,40 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   alignment: Alignment.topRight,
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: TextButton(
-                      onPressed: _skipToHome,
-                      child: Text(
-                        'Skip',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.transparent,
+                            width: 1,
+                          ),
+                        ),
+                        child: TextButton(
+                          onPressed: _skipToHome,
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: Text(
+                            'Skip',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -171,62 +217,158 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   Widget _buildSlide(WelcomeSlide slide) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Icon
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: slide.color.withOpacity(0.2),
-              shape: BoxShape.circle,
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 800),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Animated Icon Container
+                  TweenAnimationBuilder<double>(
+                    duration: const Duration(milliseconds: 1200),
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    builder: (context, iconValue, child) {
+                      return Transform.scale(
+                        scale: 0.8 + (0.2 * iconValue),
+                        child: Container(
+                          width: 140,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            gradient: slide.gradient,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: slide.color.withOpacity(0.3),
+                                blurRadius: 20,
+                                spreadRadius: 5,
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            slide.icon,
+                            size: 70,
+                            color: Colors.white,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Animated Title
+                  TweenAnimationBuilder<double>(
+                    duration: const Duration(milliseconds: 1000),
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    builder: (context, titleValue, child) {
+                      return Transform.translate(
+                        offset: Offset(0, 30 * (1 - titleValue)),
+                        child: Opacity(
+                          opacity: titleValue,
+                          child: Text(
+                            slide.title,
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  offset: Offset(0, 2),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Animated Subtitle
+                  TweenAnimationBuilder<double>(
+                    duration: const Duration(milliseconds: 1200),
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    builder: (context, subtitleValue, child) {
+                      return Transform.translate(
+                        offset: Offset(0, 20 * (1 - subtitleValue)),
+                        child: Opacity(
+                          opacity: subtitleValue,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: slide.gradient,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              slide.subtitle,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Animated Description
+                  TweenAnimationBuilder<double>(
+                    duration: const Duration(milliseconds: 1400),
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    builder: (context, descValue, child) {
+                      return Transform.translate(
+                        offset: Offset(0, 15 * (1 - descValue)),
+                        child: Opacity(
+                          opacity: descValue,
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: slide.color.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              slide.description,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white.withOpacity(0.95),
+                                height: 1.6,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-            child: Icon(slide.icon, size: 60, color: slide.color),
           ),
-
-          const SizedBox(height: 40),
-
-          // Title
-          Text(
-            slide.title,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: 8),
-
-          // Subtitle
-          Text(
-            slide.subtitle,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: slide.color,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: 24),
-
-          // Description
-          Text(
-            slide.description,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withOpacity(0.9),
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -236,40 +378,114 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Page Indicators
+          // Animated Page Indicators
           Row(
             children: List.generate(
               _slides.length,
-              (index) => Container(
-                margin: const EdgeInsets.only(right: 8),
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color:
-                      index == _currentPage
-                          ? Colors.white
-                          : Colors.white.withOpacity(0.3),
+              (index) => TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 300),
+                tween: Tween(
+                  begin: index == _currentPage ? 0.0 : 1.0,
+                  end: index == _currentPage ? 1.0 : 0.0,
                 ),
+                builder: (context, value, child) {
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.only(right: 8),
+                    width: 12 + (8 * value),
+                    height: 12 + (8 * value),
+                    decoration: BoxDecoration(
+                      gradient:
+                          index == _currentPage
+                              ? _slides[_currentPage].gradient
+                              : null,
+                      shape: BoxShape.circle,
+                      color:
+                          index == _currentPage
+                              ? null
+                              : Colors.white.withOpacity(0.3),
+                      boxShadow:
+                          index == _currentPage
+                              ? [
+                                BoxShadow(
+                                  color: _slides[_currentPage].color
+                                      .withOpacity(0.4),
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                ),
+                              ]
+                              : null,
+                    ),
+                  );
+                },
               ),
             ),
           ),
 
-          // Next/Get Started Button
-          ElevatedButton(
-            onPressed: _nextPage,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _slides[_currentPage].color,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-            ),
-            child: Text(
-              _currentPage == _slides.length - 1 ? 'Get Started' : 'Next',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+          // Animated Next/Get Started Button
+          TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 500),
+            tween: Tween(begin: 0.0, end: 1.0),
+            builder: (context, value, child) {
+              return Transform.scale(
+                scale: 0.9 + (0.1 * value),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: _slides[_currentPage].gradient,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _slides[_currentPage].color.withOpacity(0.4),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      child: ElevatedButton(
+                        onPressed: _nextPage,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _currentPage == _slides.length - 1
+                                  ? 'Get Started'
+                                  : 'Next',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              _currentPage == _slides.length - 1
+                                  ? Icons.rocket_launch
+                                  : Icons.arrow_forward,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -283,6 +499,7 @@ class WelcomeSlide {
   final String description;
   final IconData icon;
   final Color color;
+  final LinearGradient gradient;
 
   WelcomeSlide({
     required this.title,
@@ -290,5 +507,6 @@ class WelcomeSlide {
     required this.description,
     required this.icon,
     required this.color,
+    required this.gradient,
   });
 }

@@ -38,12 +38,18 @@ class KYCOnboardingScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size.fromHeight(48),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size.fromHeight(48),
+                        ),
+                        child: const Text('Upload ID'),
+                      ),
                     ),
-                    child: const Text('Upload ID'),
                   ),
                   const SizedBox(height: 32),
                   const Text(
@@ -55,12 +61,18 @@ class KYCOnboardingScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size.fromHeight(48),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size.fromHeight(48),
+                        ),
+                        child: const Text('Take Selfie'),
+                      ),
                     ),
-                    child: const Text('Take Selfie'),
                   ),
                   const SizedBox(height: 32),
                   const Text(
@@ -72,24 +84,36 @@ class KYCOnboardingScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size.fromHeight(48),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size.fromHeight(48),
+                        ),
+                        child: const Text('Enter Info'),
+                      ),
                     ),
-                    child: const Text('Enter Info'),
                   ),
                   const Spacer(),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.go('/persona');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                      backgroundColor: const Color(0xFFF4C542),
-                      foregroundColor: const Color(0xFF0B1A39),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          context.go('/persona');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                          backgroundColor: const Color(0xFFF4C542),
+                          foregroundColor: const Color(0xFF0B1A39),
+                        ),
+                        child: const Text('Continue'),
+                      ),
                     ),
-                    child: const Text('Continue'),
                   ),
                 ],
               ),

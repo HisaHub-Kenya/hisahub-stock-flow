@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-// import 'package:firebase_core/firebase_core.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/kyc_onboarding_screen.dart';
@@ -21,8 +22,8 @@ import 'services/background_image_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase (equivalent to Firebase.initializeApp() in JS)
-  // await Firebase.initializeApp();
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const HisaHubApp());
 }
@@ -183,28 +184,179 @@ class _MainScaffoldState extends State<MainScaffold> {
           _screens[_selectedIndex],
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF0B1A39),
-        selectedItemColor: const Color(0xFFF4C542),
-        unselectedItemColor: Colors.white,
-        currentIndex: _selectedIndex,
-        onTap: _onTabTapped,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.swap_horiz), label: 'Trade'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pie_chart),
-            label: 'Portfolio',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF0B1A39),
+              const Color(0xFF0B1A39).withOpacity(0.95),
+            ],
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.article), label: 'News'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          backgroundColor: Colors.transparent,
+          selectedItemColor: const Color(0xFFF4C542),
+          unselectedItemColor: Colors.white.withOpacity(0.7),
+          currentIndex: _selectedIndex,
+          onTap: _onTabTapped,
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          selectedFontSize: 12,
+          unselectedFontSize: 11,
+          items: [
+            BottomNavigationBarItem(
+              icon: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color:
+                        _selectedIndex == 0
+                            ? const Color(0xFFF4C542).withOpacity(0.2)
+                            : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.transparent, width: 1),
+                  ),
+                  child: Icon(
+                    Icons.home_rounded,
+                    size: _selectedIndex == 0 ? 26 : 24,
+                  ),
+                ),
+              ),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color:
+                        _selectedIndex == 1
+                            ? const Color(0xFFF4C542).withOpacity(0.2)
+                            : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.transparent, width: 1),
+                  ),
+                  child: Icon(
+                    Icons.trending_up_rounded,
+                    size: _selectedIndex == 1 ? 26 : 24,
+                  ),
+                ),
+              ),
+              label: 'Trade',
+            ),
+            BottomNavigationBarItem(
+              icon: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color:
+                        _selectedIndex == 2
+                            ? const Color(0xFFF4C542).withOpacity(0.2)
+                            : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.transparent, width: 1),
+                  ),
+                  child: Icon(
+                    Icons.pie_chart_rounded,
+                    size: _selectedIndex == 2 ? 26 : 24,
+                  ),
+                ),
+              ),
+              label: 'Portfolio',
+            ),
+            BottomNavigationBarItem(
+              icon: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color:
+                        _selectedIndex == 3
+                            ? const Color(0xFFF4C542).withOpacity(0.2)
+                            : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.transparent, width: 1),
+                  ),
+                  child: Icon(
+                    Icons.article_rounded,
+                    size: _selectedIndex == 3 ? 26 : 24,
+                  ),
+                ),
+              ),
+              label: 'News',
+            ),
+            BottomNavigationBarItem(
+              icon: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color:
+                        _selectedIndex == 4
+                            ? const Color(0xFFF4C542).withOpacity(0.2)
+                            : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.transparent, width: 1),
+                  ),
+                  child: Icon(
+                    Icons.person_rounded,
+                    size: _selectedIndex == 4 ? 26 : 24,
+                  ),
+                ),
+              ),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showHisaAIAssistant,
-        tooltip: 'Hisa AI Assistant',
-        child: const Icon(Icons.smart_toy),
+      floatingActionButton: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF4C542), Color(0xFFFFD54F)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFF4C542).withOpacity(0.4),
+                blurRadius: 15,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            onPressed: _showHisaAIAssistant,
+            tooltip: 'Hisa AI Assistant',
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: const Icon(
+              Icons.psychology_rounded,
+              color: Color(0xFF0B1A39),
+              size: 28,
+            ),
+          ),
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );

@@ -20,10 +20,9 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     });
   }
-@override
-  build(BuildContext context) {
+
   @override
-  Widget 
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0B1A39),
       body: Stack(

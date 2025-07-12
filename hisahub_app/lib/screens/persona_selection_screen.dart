@@ -77,7 +77,7 @@ class PersonaSelectionScreen extends StatelessWidget {
                       ),
                       onTap: () {
                         // TODO: Store persona selection
-                        context.go('/');
+                        context.go('/home');
                       },
                       contentPadding: const EdgeInsets.symmetric(
                         vertical: 16,
