@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -18,6 +15,7 @@ import 'screens/profile_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'widgets/hisa_ai_assistant_modal.dart';
 import 'services/background_image_service.dart';
+import 'services/app_state_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,8 +31,11 @@ class HisaHubApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => BackgroundImageService(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => BackgroundImageService()),
+        ChangeNotifierProvider(create: (context) => AppStateService()),
+      ],
       child: MaterialApp.router(
         title: 'HisaHub',
         theme: ThemeData(
