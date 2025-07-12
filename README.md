@@ -29,9 +29,7 @@ This repository contains multiple components of the HisaHub platform:
 ```
 HisaHub/
 ├── hisahub_app/          # Flutter mobile app (main)
-├── web-frontend/         # React/TypeScript web interface
 ├── backend/              # Django Python backend
-├── supabase/             # Database configuration
 └── README.md            # This file
 ```
 
@@ -40,9 +38,8 @@ HisaHub/
 | Component | Technology | Purpose |
 |-----------|------------|---------|
 | **Mobile App** | Flutter (Dart) | Primary mobile experience for Android & iOS |
-| **Web Frontend** | React + TypeScript | Web-based interface for desktop users |
 | **Backend** | Django (Python) | API server and business logic |
-| **Database** | Supabase (PostgreSQL) | User data, authentication, and real-time features |
+| **Database** | Firebase (Firestore) | User data, authentication, and real-time features |
 
 ---
 
@@ -51,9 +48,8 @@ HisaHub/
 | Layer          | Technology Used                              |
 | -------------- | --------------------------------------------- |
 | Mobile App     | Flutter (Dart)                               |
-| Web Frontend   | React + TypeScript + Vite                    |
 | Backend        | Django (Python)                              |
-| Auth & DB      | Supabase (PostgreSQL, Auth)                  |
+| Auth & DB      | Firebase (Firestore, Auth)                   |
 | AI Integration | Ollama + Mistral/phi2 via Invisa AI engine   |
 | Hosting        | Firebase + AWS Nairobi                       |
 | Others         | TensorFlow, REST APIs, WebSockets, Figma UI  |
@@ -65,9 +61,8 @@ HisaHub/
 ### Prerequisites
 
 - **For Mobile App**: Flutter SDK, Dart
-- **For Web Frontend**: Node.js 18+, npm
 - **For Backend**: Python 3.10+
-- **For Database**: Supabase CLI
+- **For Database**: Firebase CLI
 - **For Deployment**: Firebase CLI, Git
 
 ### Setup Instructions
@@ -79,14 +74,7 @@ flutter pub get
 flutter run
 ```
 
-#### 2. Web Frontend (React)
-```bash
-cd web-frontend
-npm install
-npm run dev
-```
-
-#### 3. Backend (Django)
+#### 2. Backend (Django)
 ```bash
 cd backend
 python -m venv venv
@@ -99,10 +87,19 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-#### 4. Database (Supabase)
+#### 3. Firebase Setup
 ```bash
-cd supabase
-supabase start
+# Install Firebase CLI
+npm install -g firebase-tools
+
+# Login to Firebase
+firebase login
+
+# Initialize Firebase in your project
+firebase init
+
+# Deploy Firebase configuration
+firebase deploy
 ```
 
 ---
@@ -110,18 +107,16 @@ supabase start
 ## 📱 Development Workflow
 
 1. **Mobile Development**: Work in `hisahub_app/` for Flutter features
-2. **Web Development**: Work in `web-frontend/` for React features  
-3. **Backend Development**: Work in `backend/` for Django APIs
-4. **Database Changes**: Work in `supabase/` for schema updates
+2. **Backend Development**: Work in `backend/` for Django APIs
+3. **Database Changes**: Work with Firebase Console for schema updates
 
 ---
 
 ## 🚀 Deployment
 
 - **Mobile App**: Deploy to Google Play Store & Apple App Store
-- **Web Frontend**: Deploy to Vercel or Firebase Hosting
 - **Backend**: Deploy to AWS Nairobi or Google Cloud
-- **Database**: Supabase Cloud (already configured)
+- **Database**: Firebase Cloud (Firestore, Auth, Storage)
 
 ---
 
