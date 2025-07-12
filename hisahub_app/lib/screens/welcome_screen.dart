@@ -69,6 +69,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   void _nextPage() {
+    // Toggle background image on every next
+    Provider.of<BackgroundImageService>(context, listen: false).toggleImage();
     if (_currentPage < _slides.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
@@ -80,6 +82,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   void _goToHome() {
+    // Also toggle when skipping to home (for consistency)
+    Provider.of<BackgroundImageService>(context, listen: false).toggleImage();
     context.go('/home');
   }
 
