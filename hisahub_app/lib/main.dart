@@ -169,6 +169,10 @@ class _MainScaffoldState extends State<MainScaffold> {
     ProfileScreen(),
   ];
 
+  double _fontScale = 1.0;
+  bool _highContrast = false;
+  bool _dyslexiaMode = false;
+
   void _onTabTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -186,6 +190,113 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
+  void _showAccessibilityModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0B1A39),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Accessibility & Personalization',
+                style: TextStyle(
+                  color: Color(0xFFF4C542),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  const Icon(Icons.text_fields, color: Colors.white70),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Font Size',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  Expanded(
+                    child: Slider(
+                      value: _fontScale,
+                      min: 0.8,
+                      max: 1.4,
+                      divisions: 6,
+                      label: '${(_fontScale * 100).toInt()}%',
+                      onChanged: (val) => setState(() => _fontScale = val),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.contrast, color: Colors.white70),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'High Contrast',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  const Spacer(),
+                  Switch(
+                    value: _highContrast,
+                    onChanged: (val) => setState(() => _highContrast = val),
+                    activeColor: const Color(0xFFF4C542),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.font_download, color: Colors.white70),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Dyslexia-Friendly Font',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  const Spacer(),
+                  Switch(
+                    value: _dyslexiaMode,
+                    onChanged: (val) => setState(() => _dyslexiaMode = val),
+                    activeColor: const Color(0xFFF4C542),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.brightness_6, color: Colors.white70),
+                  const SizedBox(width: 12),
+                  const Text('Theme', style: TextStyle(color: Colors.white)),
+                  const Spacer(),
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, child) {
+                      return IconButton(
+                        icon: Icon(
+                          themeProvider.isDarkMode
+                              ? Icons.wb_sunny
+                              : Icons.nightlight_round,
+                          color: const Color(0xFFF4C542),
+                        ),
+                        onPressed: () => themeProvider.toggleTheme(),
+                        tooltip: 'Toggle Theme',
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AppStateService>(
@@ -193,7 +304,6 @@ class _MainScaffoldState extends State<MainScaffold> {
         return Scaffold(
           body: Stack(
             children: [
-              // Offline Mode Banner (only show when offline)
               if (appState.isOffline)
                 Positioned(
                   top: 0,
@@ -214,6 +324,89 @@ class _MainScaffoldState extends State<MainScaffold> {
                   ),
                 ),
               _screens[_selectedIndex],
+              // Accessibility FAB only on Profile page
+              if (_selectedIndex == 4)
+                Positioned(
+                  left: 16,
+                  bottom: 80, // above bottom nav bar
+                  child: FloatingActionButton(
+                    heroTag: 'accessibility_fab',
+                    onPressed: _showAccessibilityModal,
+                    backgroundColor: const Color(0xFFF4C542),
+                    child: const Icon(
+                      Icons.accessibility_new,
+                      color: Color(0xFF0B1A39),
+                    ),
+                    tooltip: 'Accessibility & Personalization',
+                  ),
+                ),
+              // AI Assistant FAB (bottom right, above nav bar)
+              Positioned(
+                right: 16,
+                bottom: 80, // above bottom nav bar
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFF4C542), Color(0xFFFFD54F)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFF4C542).withOpacity(0.4),
+                          blurRadius: 15,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: FloatingActionButton(
+                      heroTag: 'ai_fab',
+                      onPressed:
+                          appState.isAuthenticated
+                              ? _showHisaAIAssistant
+                              : () {
+                                // Show sign-in prompt for AI assistant
+                                showDialog(
+                                  context: context,
+                                  builder:
+                                      (context) => AlertDialog(
+                                        title: const Text('Sign In Required'),
+                                        content: const Text(
+                                          'Please sign in to access the AI assistant.',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.pop(context),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              context.go('/login');
+                                            },
+                                            child: const Text('Sign In'),
+                                          ),
+                                        ],
+                                      ),
+                                );
+                              },
+                      tooltip: 'Hisa AI Assistant',
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      child: const Icon(
+                        Icons.psychology_rounded,
+                        color: Color(0xFF0B1A39),
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
           bottomNavigationBar: Container(
@@ -358,67 +551,8 @@ class _MainScaffoldState extends State<MainScaffold> {
               ],
             ),
           ),
-          floatingActionButton: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFF4C542), Color(0xFFFFD54F)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFF4C542).withOpacity(0.4),
-                    blurRadius: 15,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: FloatingActionButton(
-                onPressed:
-                    appState.isAuthenticated
-                        ? _showHisaAIAssistant
-                        : () {
-                          // Show sign-in prompt for AI assistant
-                          showDialog(
-                            context: context,
-                            builder:
-                                (context) => AlertDialog(
-                                  title: const Text('Sign In Required'),
-                                  content: const Text(
-                                    'Please sign in to access the AI assistant.',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        context.go('/login');
-                                      },
-                                      child: const Text('Sign In'),
-                                    ),
-                                  ],
-                                ),
-                          );
-                        },
-                tooltip: 'Hisa AI Assistant',
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                child: const Icon(
-                  Icons.psychology_rounded,
-                  color: Color(0xFF0B1A39),
-                  size: 28,
-                ),
-              ),
-            ),
-          ),
-          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+          floatingActionButton: null,
+          floatingActionButtonLocation: null,
         );
       },
     );

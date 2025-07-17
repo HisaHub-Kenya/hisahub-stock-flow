@@ -14,7 +14,7 @@ class BackgroundImageService extends ChangeNotifier {
   ];
 
   int _currentImageIndex = 0;
-  double _opacity = 0.3;
+  double _opacity = 0.18;
 
   String get currentImage => _backgroundImages[_currentImageIndex];
   double get opacity => _opacity;
@@ -32,15 +32,20 @@ class BackgroundImageService extends ChangeNotifier {
   }
 
   void setOpacity(double opacity) {
-    _opacity = opacity.clamp(0.1, 0.5);
+    _opacity = opacity.clamp(0.08, 0.25);
     notifyListeners();
   }
 
   Widget buildBackgroundImage() {
     return Positioned.fill(
-      child: Opacity(
-        opacity: _opacity,
-        child: Image.asset(currentImage, fit: BoxFit.cover),
+      child: Stack(
+        children: [
+          Opacity(
+            opacity: _opacity,
+            child: Image.asset(currentImage, fit: BoxFit.cover),
+          ),
+          Container(color: Colors.black.withOpacity(0.45)),
+        ],
       ),
     );
   }
