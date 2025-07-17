@@ -1,6 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class ApiService {
   static const String baseUrl =
@@ -51,6 +55,51 @@ class ApiService {
     }
   }
 
+  // Phone number authentication
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required Function(String) onCodeSent,
+    required Function(UserCredential) onVerificationCompleted,
+    required Function(String) onVerificationFailed,
+  }) async {
+    try {
+      await _auth.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) {
+          _auth
+              .signInWithCredential(credential)
+              .then((userCredential) {
+                onVerificationCompleted(userCredential);
+              })
+              .catchError((e) {
+                onVerificationFailed(e.toString());
+              });
+        },
+        verificationFailed:
+            (FirebaseAuthException e) =>
+                onVerificationFailed(e.message ?? 'Verification failed'),
+        codeSent:
+            (String verificationId, int? resendToken) =>
+                onCodeSent(verificationId),
+        codeAutoRetrievalTimeout: (String verificationId) {},
+      );
+    } catch (e) {
+      print('Phone verification error: $e');
+      rethrow;
+    }
+  }
+
+  Future<UserCredential?> signInWithCredential(
+    PhoneAuthCredential credential,
+  ) async {
+    try {
+      return await _auth.signInWithCredential(credential);
+    } catch (e) {
+      print('Sign in with credential error: $e');
+      rethrow;
+    }
+  }
+
   Future<void> signOut() async {
     await _auth.signOut();
   }
@@ -62,6 +111,7 @@ class ApiService {
     required String phoneNumber,
     required String idNumber,
     String? profileImageUrl,
+    String? persona, // Student, Hustler, Corporate, Parent
   }) async {
     try {
       await _firestore.collection('users').doc(userId).set({
@@ -69,6 +119,7 @@ class ApiService {
         'phoneNumber': phoneNumber,
         'idNumber': idNumber,
         'profileImageUrl': profileImageUrl,
+        'persona': persona,
         'kycStatus': 'pending',
         'accountStatus': 'active',
         'createdAt': FieldValue.serverTimestamp(),
@@ -195,12 +246,14 @@ class ApiService {
     required String orderType, // 'buy' or 'sell'
     required int quantity,
     required double price,
+    String? orderMode, // 'market', 'limit', 'stop'
   }) async {
     try {
       await _firestore.collection('orders').add({
         'userId': userId,
         'symbol': symbol,
         'orderType': orderType,
+        'orderMode': orderMode ?? 'market',
         'quantity': quantity,
         'price': price,
         'status': 'pending',
@@ -259,6 +312,7 @@ class ApiService {
     required String phoneNumber,
     required double amount,
     required String reference,
+    String? accountType, // 'deposit' or 'withdrawal'
   }) async {
     try {
       // This would call the M-Pesa API
@@ -267,10 +321,104 @@ class ApiService {
         'status': 'success',
         'transactionId': 'MPESA_${DateTime.now().millisecondsSinceEpoch}',
         'message': 'Payment initiated successfully',
+        'amount': amount,
+        'phoneNumber': phoneNumber,
+        'reference': reference,
       };
     } catch (e) {
       print('M-Pesa payment error: $e');
       rethrow;
+    }
+  }
+
+  // Portfolio export to PDF
+  Future<String> exportPortfolioToPDF(String userId) async {
+    try {
+      final portfolio = await getUserPortfolio(userId);
+      final userProfile = await getUserProfile(userId);
+
+      final pdf = pw.Document();
+
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Header(level: 0, child: pw.Text('HisaHub Portfolio Report')),
+                pw.SizedBox(height: 20),
+                pw.Text('Generated on: ${DateTime.now().toString()}'),
+                pw.SizedBox(height: 20),
+                pw.Text('Portfolio Holdings:'),
+                pw.SizedBox(height: 10),
+                ...portfolio.map(
+                  (holding) => pw.Padding(
+                    padding: pw.EdgeInsets.all(8),
+                    child: pw.Text(
+                      '${holding['symbol']}: ${holding['quantity']} shares @ ${holding['averagePrice']}',
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File(
+        '${directory.path}/portfolio_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
+      await file.writeAsBytes(await pdf.save());
+
+      return file.path;
+    } catch (e) {
+      print('Export portfolio error: $e');
+      rethrow;
+    }
+  }
+
+  // Offline caching
+  Future<void> cacheData(String key, Map<String, dynamic> data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(key, jsonEncode(data));
+    } catch (e) {
+      print('Cache data error: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> getCachedData(String key) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = prefs.getString(key);
+      if (data != null) {
+        return jsonDecode(data) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Get cached data error: $e');
+      return null;
+    }
+  }
+
+  // Security features
+  Future<void> logSecurityEvent({
+    required String userId,
+    required String event,
+    required String details,
+  }) async {
+    try {
+      await _firestore.collection('security_logs').add({
+        'userId': userId,
+        'event': event,
+        'details': details,
+        'timestamp': FieldValue.serverTimestamp(),
+        'ipAddress': 'unknown', // Would be captured in production
+        'userAgent': 'unknown', // Would be captured in production
+      });
+    } catch (e) {
+      print('Log security event error: $e');
     }
   }
 

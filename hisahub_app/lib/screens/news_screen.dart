@@ -46,8 +46,9 @@ class NewsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Stock & Finance News Section
           const Text(
-            'Financial News',
+            'Stock & Finance News',
             style: TextStyle(
               color: Color(0xFFF4C542),
               fontSize: 18,
@@ -57,7 +58,7 @@ class NewsScreen extends StatelessWidget {
           Card(
             color: Colors.white10,
             child: ListTile(
-              leading: Icon(Icons.article, color: Color(0xFFF4C542)),
+              leading: Icon(Icons.trending_up, color: Color(0xFFF4C542)),
               title: const Text(
                 'NSE rallies as investors return',
                 style: TextStyle(color: Colors.white),
@@ -68,9 +69,62 @@ class NewsScreen extends StatelessWidget {
               ),
             ),
           ),
+          Card(
+            color: Colors.white10,
+            child: ListTile(
+              leading: Icon(Icons.trending_down, color: Color(0xFFF4C542)),
+              title: const Text(
+                'Banking stocks dip amid new regulations',
+                style: TextStyle(color: Colors.white),
+              ),
+              subtitle: const Text(
+                'Several banks saw declines after CMA updates...',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ),
           const SizedBox(height: 24),
+          // Featured Articles Section
           const Text(
-            'Social Hub',
+            'Featured Articles',
+            style: TextStyle(
+              color: Color(0xFFF4C542),
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Card(
+            color: Colors.white10,
+            child: ListTile(
+              leading: Icon(Icons.lightbulb, color: Color(0xFFF4C542)),
+              title: const Text(
+                '5 Tips for New Investors in Kenya',
+                style: TextStyle(color: Colors.white),
+              ),
+              subtitle: const Text(
+                'Start small, diversify, and stay informed...',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ),
+          Card(
+            color: Colors.white10,
+            child: ListTile(
+              leading: Icon(Icons.analytics, color: Color(0xFFF4C542)),
+              title: const Text(
+                'Understanding the NSE Indices',
+                style: TextStyle(color: Colors.white),
+              ),
+              subtitle: const Text(
+                'A guide to the NSE 20 and All Share Index...',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Community Social Hub Section
+          const Text(
+            'Community Social Hub',
             style: TextStyle(
               color: Color(0xFFF4C542),
               fontSize: 18,
@@ -98,6 +152,31 @@ class NewsScreen extends StatelessWidget {
                     tooltip: 'Like',
                   ),
                   Text('12', style: TextStyle(color: Colors.white70)),
+                ],
+              ),
+            ),
+          ),
+          Card(
+            color: Colors.white10,
+            child: ListTile(
+              leading: Icon(Icons.person, color: Color(0xFFF4C542)),
+              title: const Text(
+                '@investor254',
+                style: TextStyle(color: Colors.white),
+              ),
+              subtitle: const Text(
+                'What are your thoughts on KCB this week?',
+                style: TextStyle(color: Colors.white70),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.thumb_up, color: Colors.white70, size: 20),
+                    onPressed: () => _showSignInPrompt(context, 'like posts'),
+                    tooltip: 'Like',
+                  ),
+                  Text('7', style: TextStyle(color: Colors.white70)),
                 ],
               ),
             ),

@@ -16,6 +16,12 @@ class AppStateService extends ChangeNotifier {
   List<Map<String, dynamic>> _portfolio = [];
   List<Map<String, dynamic>> _news = [];
 
+  // Offline state
+  bool _isOffline = false;
+  Map<String, dynamic>? _cachedMarketData;
+  Map<String, dynamic>? _cachedPortfolio;
+  Map<String, dynamic>? _cachedNews;
+
   // Getters
   User? get currentUser => _currentUser;
   Map<String, dynamic>? get userProfile => _userProfile;
@@ -25,6 +31,7 @@ class AppStateService extends ChangeNotifier {
   List<Map<String, dynamic>> get marketData => _marketData;
   List<Map<String, dynamic>> get portfolio => _portfolio;
   List<Map<String, dynamic>> get news => _news;
+  bool get isOffline => _isOffline;
 
   // Initialize app state
   Future<void> initialize() async {
@@ -89,6 +96,37 @@ class AppStateService extends ChangeNotifier {
     }
   }
 
+  // Phone authentication
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required Function(String) onCodeSent,
+    required Function(UserCredential) onVerificationCompleted,
+    required Function(String) onVerificationFailed,
+  }) async {
+    try {
+      await _apiService.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        onCodeSent: onCodeSent,
+        onVerificationCompleted: onVerificationCompleted,
+        onVerificationFailed: onVerificationFailed,
+      );
+    } catch (e) {
+      _setError(e.toString());
+    }
+  }
+
+  Future<bool> signInWithPhoneCredential(PhoneAuthCredential credential) async {
+    _setLoading(true);
+    try {
+      await _apiService.signInWithCredential(credential);
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    }
+  }
+
   Future<void> signOut() async {
     _setLoading(true);
     try {
@@ -119,6 +157,7 @@ class AppStateService extends ChangeNotifier {
     required String phoneNumber,
     required String idNumber,
     String? profileImageUrl,
+    String? persona,
   }) async {
     if (_currentUser == null) return false;
 
@@ -130,6 +169,7 @@ class AppStateService extends ChangeNotifier {
         phoneNumber: phoneNumber,
         idNumber: idNumber,
         profileImageUrl: profileImageUrl,
+        persona: persona,
       );
       await _loadUserProfile();
       _setLoading(false);
@@ -160,9 +200,21 @@ class AppStateService extends ChangeNotifier {
   Future<void> _loadMarketData() async {
     try {
       _marketData = await _apiService.getMarketData();
+      // Cache the data for offline access
+      await _apiService.cacheData('market_data', {
+        'data': _marketData,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
       notifyListeners();
     } catch (e) {
       print('Load market data error: $e');
+      // Try to load cached data
+      final cached = await _apiService.getCachedData('market_data');
+      if (cached != null) {
+        _marketData = List<Map<String, dynamic>>.from(cached['data'] ?? []);
+        _isOffline = true;
+        notifyListeners();
+      }
     }
   }
 
@@ -176,9 +228,23 @@ class AppStateService extends ChangeNotifier {
 
     try {
       _portfolio = await _apiService.getUserPortfolio(_currentUser!.uid);
+      // Cache the data for offline access
+      await _apiService.cacheData('portfolio_${_currentUser!.uid}', {
+        'data': _portfolio,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
       notifyListeners();
     } catch (e) {
       print('Load portfolio error: $e');
+      // Try to load cached data
+      final cached = await _apiService.getCachedData(
+        'portfolio_${_currentUser!.uid}',
+      );
+      if (cached != null) {
+        _portfolio = List<Map<String, dynamic>>.from(cached['data'] ?? []);
+        _isOffline = true;
+        notifyListeners();
+      }
     }
   }
 
@@ -206,12 +272,30 @@ class AppStateService extends ChangeNotifier {
     }
   }
 
+  // Portfolio export
+  Future<String?> exportPortfolioToPDF() async {
+    if (_currentUser == null) return null;
+
+    _setLoading(true);
+    try {
+      final filePath = await _apiService.exportPortfolioToPDF(
+        _currentUser!.uid,
+      );
+      _setLoading(false);
+      return filePath;
+    } catch (e) {
+      _setError(e.toString());
+      return null;
+    }
+  }
+
   // Trading methods
   Future<bool> placeOrder({
     required String symbol,
     required String orderType,
     required int quantity,
     required double price,
+    String? orderMode,
   }) async {
     if (_currentUser == null) return false;
 
@@ -223,6 +307,7 @@ class AppStateService extends ChangeNotifier {
         orderType: orderType,
         quantity: quantity,
         price: price,
+        orderMode: orderMode,
       );
       _setLoading(false);
       return true;
@@ -236,9 +321,21 @@ class AppStateService extends ChangeNotifier {
   Future<void> _loadNews() async {
     try {
       _news = await _apiService.getNews();
+      // Cache the data for offline access
+      await _apiService.cacheData('news', {
+        'data': _news,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
       notifyListeners();
     } catch (e) {
       print('Load news error: $e');
+      // Try to load cached data
+      final cached = await _apiService.getCachedData('news');
+      if (cached != null) {
+        _news = List<Map<String, dynamic>>.from(cached['data'] ?? []);
+        _isOffline = true;
+        notifyListeners();
+      }
     }
   }
 
@@ -262,16 +359,39 @@ class AppStateService extends ChangeNotifier {
     required String phoneNumber,
     required double amount,
     required String reference,
+    String? accountType,
   }) async {
     try {
       return await _apiService.initiateMpesaPayment(
         phoneNumber: phoneNumber,
         amount: amount,
         reference: reference,
+        accountType: accountType,
       );
     } catch (e) {
       return {'status': 'error', 'message': e.toString()};
     }
+  }
+
+  // Security logging
+  Future<void> logSecurityEvent(String event, String details) async {
+    if (_currentUser == null) return;
+
+    try {
+      await _apiService.logSecurityEvent(
+        userId: _currentUser!.uid,
+        event: event,
+        details: details,
+      );
+    } catch (e) {
+      print('Log security event error: $e');
+    }
+  }
+
+  // Offline mode management
+  void setOfflineMode(bool offline) {
+    _isOffline = offline;
+    notifyListeners();
   }
 
   // Clear error

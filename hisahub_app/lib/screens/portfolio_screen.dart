@@ -31,6 +31,74 @@ class PortfolioScreen extends StatelessWidget {
     );
   }
 
+  void _showAddFundsModal(BuildContext context) {
+    final TextEditingController amountController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      backgroundColor: const Color(0xFF0B1A39),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Add Funds',
+                style: TextStyle(
+                  color: Color(0xFFF4C542),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Amount (KES)',
+                  labelStyle: const TextStyle(color: Colors.white),
+                  filled: true,
+                  fillColor: Colors.white10,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                style: const TextStyle(color: Colors.white),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Funds added: KES ${amountController.text} (simulated)',
+                      ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF4C542),
+                  foregroundColor: const Color(0xFF0B1A39),
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Confirm'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,28 +142,50 @@ class PortfolioScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          // Portfolio Overview with Add Funds button
           Card(
             color: Colors.white10,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Portfolio Overview',
-                    style: TextStyle(
-                      color: Color(0xFFF4C542),
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Portfolio Overview',
+                          style: TextStyle(
+                            color: Color(0xFFF4C542),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'KES 0.00',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    'KES 0.00',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                  ElevatedButton.icon(
+                    onPressed: () => _showAddFundsModal(context),
+                    icon: const Icon(Icons.add, color: Color(0xFF0B1A39)),
+                    label: const Text(
+                      'Add Funds',
+                      style: TextStyle(color: Color(0xFF0B1A39)),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF4C542),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ],

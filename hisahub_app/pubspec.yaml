@@ -49,6 +49,13 @@ dependencies:
   
   # HTTP client for API calls
   http: ^1.2.0
+  
+  # PDF generation and file handling
+  pdf: ^3.10.7
+  path_provider: ^2.1.2
+  
+  # Phone number formatting and validation
+  phone_number: ^2.0.1
 
 dev_dependencies:
   flutter_test:
