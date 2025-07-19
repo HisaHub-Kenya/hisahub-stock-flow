@@ -583,6 +583,70 @@ class _TradeScreenState extends State<TradeScreen> {
                               );
                             }).toList(),
                       ),
+                      // --- Search Stock Container ---
+                      const SizedBox(height: 16),
+                      _StockSearchBar(
+                        allStocks: marketData,
+                        onSelect: (symbol) {
+                          setState(() {
+                            _selectedStock = symbol;
+                          });
+                        },
+                      ),
+                      // --- Stock Filter Bar ---
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _StockFilterBar(
+                              allStocks: marketData,
+                              sectors: [
+                                'All',
+                                'Telecom',
+                                'Banking',
+                                'Manufacturing',
+                              ], // Example sectors
+                              onFilter: (filtered) {
+                                // Optionally update trending stocks or other UI with filtered list
+                              },
+                              onSort: (sortBy) {
+                                // Optionally update sort order
+                              },
+                              showWatchlistOnly:
+                                  false, // Optionally bind to state
+                              onToggleWatchlist: (val) {
+                                // Optionally update watchlist filter
+                              },
+                            ),
+                          ),
+                          Tooltip(
+                            message:
+                                'Demo Mode: Simulate trades with virtual money',
+                            child: Row(
+                              children: [
+                                const Text('Demo'),
+                                Switch(
+                                  value: false, // Optionally bind to state
+                                  onChanged: (val) {
+                                    // Toggle demo mode
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // --- Personalized Insights ---
+                      _PersonalizedInsights(
+                        selectedStock: _selectedStock,
+                        portfolio: portfolio,
+                        tradeHistory: tradeHistory,
+                        bestStockThisMonth: bestStockThisMonth(),
+                        avgBuyPrice: avgBuyPrice(_selectedStock ?? ''),
+                        lastTradeDate: lastTradeDate(_selectedStock ?? ''),
+                      ),
+                      const SizedBox(height: 12),
                       // ... Trending Stocks ...
                       const SizedBox(height: 16),
                       Text(
@@ -595,105 +659,51 @@ class _TradeScreenState extends State<TradeScreen> {
                       ),
                       const SizedBox(height: 8),
                       SizedBox(
-                        height: 130,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: 3,
-                          separatorBuilder:
-                              (_, __) => const SizedBox(width: 12),
-                          itemBuilder: (context, i) {
-                            final trending = [
-                              {
-                                'symbol': 'SCOM',
-                                'name': 'Safaricom',
-                                'price': _livePrices['SCOM'] ?? 20.50,
-                                'trend': [19.8, 20.0, 20.2, 20.5],
-                              },
-                              {
-                                'symbol': 'KCB',
-                                'name': 'KCB Group',
-                                'price': _livePrices['KCB'] ?? 38.75,
-                                'trend': [37.5, 38.0, 38.2, 38.75],
-                              },
-                              {
-                                'symbol': 'EQTY',
-                                'name': 'Equity Group',
-                                'price': _livePrices['EQTY'] ?? 42.80,
-                                'trend': [43.5, 43.2, 43.0, 42.8],
-                              },
-                            ];
-                            final t = trending[i];
-                            final symbol = t['symbol'] as String;
-                            final name = t['name'] as String;
-                            final price = t['price'] as double;
-                            final trend =
-                                (t['trend'] as List)
-                                    .map((e) => e as double)
-                                    .toList();
-                            return Card(
-                              color: Colors.white10,
-                              child: Container(
-                                width: 140,
-                                padding: const EdgeInsets.all(8),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      name,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
+                        height: 150,
+                        child:
+                            marketData.isEmpty && isLoading
+                                ? ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: 3,
+                                  separatorBuilder:
+                                      (_, __) => const SizedBox(width: 12),
+                                  itemBuilder:
+                                      (context, i) => SkeletonLoaderCard(),
+                                )
+                                : ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: trending.length,
+                                  separatorBuilder:
+                                      (_, __) => const SizedBox(width: 12),
+                                  itemBuilder: (context, i) {
+                                    final t = trending[i];
+                                    return StockCard(
+                                      symbol: t['symbol'],
+                                      name: t['name'],
+                                      price: t['price'],
+                                      trend: t['trend'],
+                                      isStarred: _watchlist.contains(
+                                        t['symbol'],
                                       ),
-                                    ),
-                                    Text(
-                                      symbol,
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'KES ${price.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    SizedBox(
-                                      height: 22,
-                                      child: LineChart(
-                                        LineChartData(
-                                          lineBarsData: [
-                                            LineChartBarData(
-                                              spots: List.generate(
-                                                trend.length,
-                                                (j) => FlSpot(
-                                                  j.toDouble(),
-                                                  trend[j],
-                                                ),
-                                              ),
-                                              isCurved: true,
-                                              color: Colors.green,
-                                              barWidth: 2,
-                                              dotData: FlDotData(show: false),
-                                            ),
-                                          ],
-                                          titlesData: FlTitlesData(show: false),
-                                          gridData: FlGridData(show: false),
-                                          borderData: FlBorderData(show: false),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                      onTap:
+                                          () => context.go(
+                                            '/stock/${t['symbol']}',
+                                          ),
+                                      onStar:
+                                          () => setState(() {
+                                            if (_watchlist.contains(
+                                              t['symbol'],
+                                            )) {
+                                              _watchlist.remove(t['symbol']);
+                                            } else {
+                                              _watchlist.add(t['symbol']);
+                                            }
+                                          }),
+                                      performance: getPerformanceBadge(t),
+                                      riskWarning: isVolatile(t),
+                                    );
+                                  },
                                 ),
-                              ),
-                            );
-                          },
-                        ),
                       ),
                       // ... Market Data Container ...
                       const SizedBox(height: 16),
@@ -1319,6 +1329,7 @@ class _TradeScreenState extends State<TradeScreen> {
               ),
             ...portfolio.map(
               (pos) => ListTile(
+                onTap: () => context.go('/stock/${pos['symbol']}'),
                 leading: CircleAvatar(
                   child: Text(pos['symbol'] ?? '?'),
                   backgroundColor: const Color(0xFFF4C542),
@@ -1336,6 +1347,518 @@ class _TradeScreenState extends State<TradeScreen> {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StockSearchBar extends StatefulWidget {
+  final List<Map<String, dynamic>> allStocks;
+  final void Function(String symbol) onSelect;
+  const _StockSearchBar({required this.allStocks, required this.onSelect});
+
+  @override
+  State<_StockSearchBar> createState() => _StockSearchBarState();
+}
+
+class _StockSearchBarState extends State<_StockSearchBar> {
+  String _query = '';
+  @override
+  Widget build(BuildContext context) {
+    final filtered =
+        widget.allStocks.where((stock) {
+          final symbol = (stock['symbol'] ?? '').toString().toLowerCase();
+          final name = (stock['name'] ?? '').toString().toLowerCase();
+          return symbol.contains(_query.toLowerCase()) ||
+              name.contains(_query.toLowerCase());
+        }).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          onChanged: (val) => setState(() => _query = val),
+          decoration: InputDecoration(
+            hintText: 'Search stock by name or symbol...',
+            hintStyle: const TextStyle(color: Colors.white54),
+            filled: true,
+            fillColor: Colors.white10,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixIcon: const Icon(Icons.search, color: Colors.white54),
+            suffixIcon:
+                _query.isNotEmpty
+                    ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => setState(() => _query = ''),
+                    )
+                    : null,
+          ),
+          style: const TextStyle(color: Colors.white),
+        ),
+        if (_query.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            decoration: BoxDecoration(
+              color: Colors.white10,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: filtered.length,
+              itemBuilder: (context, i) {
+                final stock = filtered[i];
+                return ListTile(
+                  title: Text(
+                    '${stock['name']} (${stock['symbol']})',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    widget.onSelect(stock['symbol'].toString());
+                    setState(() => _query = '');
+                  },
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _StockFilterBar extends StatefulWidget {
+  final List<Map<String, dynamic>> allStocks;
+  final List<String> sectors;
+  final void Function(List<Map<String, dynamic>> filtered) onFilter;
+  final void Function(String sortBy)? onSort;
+  final bool showWatchlistOnly;
+  final void Function(bool)? onToggleWatchlist;
+  const _StockFilterBar({
+    required this.allStocks,
+    required this.sectors,
+    required this.onFilter,
+    this.onSort,
+    this.showWatchlistOnly = false,
+    this.onToggleWatchlist,
+  });
+  @override
+  State<_StockFilterBar> createState() => _StockFilterBarState();
+}
+
+class _StockFilterBarState extends State<_StockFilterBar> {
+  String _selectedFilter = 'All';
+  String _selectedSector = 'All';
+  String _selectedSort = 'Name';
+  double? _minPrice;
+  double? _maxPrice;
+  bool _watchlistOnly = false;
+
+  List<String> get _filterOptions => [
+    'All',
+    'Gainers',
+    'Losers',
+    'Above Price',
+    'Below Price',
+    'Most Active',
+  ];
+  List<String> get _sortOptions => ['Name', 'Price', '% Change', 'Volume'];
+
+  List<Map<String, dynamic>> _applyFilter() {
+    List<Map<String, dynamic>> filtered = List.from(widget.allStocks);
+    if (_selectedSector != 'All') {
+      filtered =
+          filtered
+              .where((s) => (s['sector'] ?? '') == _selectedSector)
+              .toList();
+    }
+    if (_watchlistOnly) {
+      filtered = filtered.where((s) => (s['watchlist'] ?? false)).toList();
+    }
+    switch (_selectedFilter) {
+      case 'Gainers':
+        filtered =
+            filtered.where((s) => (s['changePercent'] ?? 0) > 0).toList();
+        break;
+      case 'Losers':
+        filtered =
+            filtered.where((s) => (s['changePercent'] ?? 0) < 0).toList();
+        break;
+      case 'Above Price':
+        if (_minPrice != null) {
+          filtered =
+              filtered.where((s) => (s['price'] ?? 0) >= _minPrice!).toList();
+        }
+        break;
+      case 'Below Price':
+        if (_maxPrice != null) {
+          filtered =
+              filtered.where((s) => (s['price'] ?? 0) <= _maxPrice!).toList();
+        }
+        break;
+      case 'Most Active':
+        filtered.sort(
+          (a, b) =>
+              ((b['volume'] ?? 0) as num).compareTo((a['volume'] ?? 0) as num),
+        );
+        break;
+      case 'All':
+      default:
+        break;
+    }
+    // Sorting
+    switch (_selectedSort) {
+      case 'Price':
+        filtered.sort(
+          (a, b) =>
+              ((b['price'] ?? 0) as num).compareTo((a['price'] ?? 0) as num),
+        );
+        break;
+      case '% Change':
+        filtered.sort(
+          (a, b) => ((b['changePercent'] ?? 0) as num).compareTo(
+            (a['changePercent'] ?? 0) as num,
+          ),
+        );
+        break;
+      case 'Volume':
+        filtered.sort(
+          (a, b) =>
+              ((b['volume'] ?? 0) as num).compareTo((a['volume'] ?? 0) as num),
+        );
+        break;
+      case 'Name':
+      default:
+        filtered.sort(
+          (a, b) => (a['name'] ?? '').toString().compareTo(
+            (b['name'] ?? '').toString(),
+          ),
+        );
+        break;
+    }
+    return filtered;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              DropdownButton<String>(
+                value: _selectedFilter,
+                items:
+                    _filterOptions
+                        .map(
+                          (f) => DropdownMenuItem<String>(
+                            value: f,
+                            child: Text(f),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedFilter = val!;
+                  });
+                  widget.onFilter(_applyFilter());
+                },
+                style: const TextStyle(color: Colors.white),
+                dropdownColor: const Color(0xFF0B1A39),
+              ),
+              const SizedBox(width: 8),
+              DropdownButton<String>(
+                value: _selectedSector,
+                items:
+                    widget.sectors
+                        .map(
+                          (s) => DropdownMenuItem<String>(
+                            value: s,
+                            child: Text(s),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedSector = val!;
+                  });
+                  widget.onFilter(_applyFilter());
+                },
+                style: const TextStyle(color: Colors.white),
+                dropdownColor: const Color(0xFF0B1A39),
+              ),
+              const SizedBox(width: 8),
+              DropdownButton<String>(
+                value: _selectedSort,
+                items:
+                    _sortOptions
+                        .map(
+                          (s) => DropdownMenuItem<String>(
+                            value: s,
+                            child: Text('Sort: $s'),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedSort = val!;
+                  });
+                  if (widget.onSort != null) widget.onSort!(_selectedSort);
+                  widget.onFilter(_applyFilter());
+                },
+                style: const TextStyle(color: Colors.white),
+                dropdownColor: const Color(0xFF0B1A39),
+              ),
+              const SizedBox(width: 8),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _watchlistOnly,
+                    onChanged: (val) {
+                      setState(() => _watchlistOnly = val ?? false);
+                      if (widget.onToggleWatchlist != null)
+                        widget.onToggleWatchlist!(_watchlistOnly);
+                      widget.onFilter(_applyFilter());
+                    },
+                  ),
+                  const Text(
+                    'Watchlist',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+              if (_selectedFilter == 'Above Price')
+                SizedBox(
+                  width: 100,
+                  child: TextField(
+                    onChanged: (v) {
+                      setState(() => _minPrice = double.tryParse(v));
+                      widget.onFilter(_applyFilter());
+                    },
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      hintText: 'Min Price',
+                      hintStyle: TextStyle(color: Colors.white54),
+                      filled: true,
+                      fillColor: Colors.white10,
+                      border: OutlineInputBorder(),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              if (_selectedFilter == 'Below Price')
+                SizedBox(
+                  width: 100,
+                  child: TextField(
+                    onChanged: (v) {
+                      setState(() => _maxPrice = double.tryParse(v));
+                      widget.onFilter(_applyFilter());
+                    },
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      hintText: 'Max Price',
+                      hintStyle: TextStyle(color: Colors.white54),
+                      filled: true,
+                      fillColor: Colors.white10,
+                      border: OutlineInputBorder(),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children:
+              _applyFilter()
+                  .map<Widget>(
+                    (stock) => GestureDetector(
+                      onTap: () {
+                        // Navigate to stock detail page using go_router
+                        context.go('/stock/${stock['symbol']}');
+                      },
+                      child: Chip(
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${stock['name']} (${stock['symbol']})',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            const SizedBox(width: 4),
+                            MiniChartWidget(history: stock['history'] ?? []),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.shopping_cart,
+                                color: Colors.green,
+                                size: 18,
+                              ),
+                              tooltip: 'Quick Buy',
+                              onPressed: () {
+                                // Quick buy logic
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.sell,
+                                color: Colors.red,
+                                size: 18,
+                              ),
+                              tooltip: 'Quick Sell',
+                              onPressed: () {
+                                // Quick sell logic
+                              },
+                            ),
+                          ],
+                        ),
+                        backgroundColor: Colors.white10,
+                      ),
+                    ),
+                  )
+                  .toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class MiniChartWidget extends StatelessWidget {
+  final List<double> history;
+  const MiniChartWidget({required this.history});
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 40,
+      height: 20,
+      child:
+          history.isEmpty
+              ? const SizedBox.shrink()
+              : CustomPaint(painter: _MiniChartPainter(history)),
+    );
+  }
+}
+
+class _MiniChartPainter extends CustomPainter {
+  final List<double> history;
+  _MiniChartPainter(this.history);
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint =
+        Paint()
+          ..color = Colors.green
+          ..strokeWidth = 2.0
+          ..style = PaintingStyle.stroke;
+    final path = Path();
+    if (history.isNotEmpty) {
+      final stepX = size.width / (history.length - 1);
+      for (int i = 0; i < history.length; i++) {
+        final x = i * stepX;
+        final y =
+            size.height -
+            (history[i] /
+                (history.reduce((a, b) => a > b ? a : b)) *
+                size.height);
+        if (i == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
+      }
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _CompanyProfileModal extends StatelessWidget {
+  final Map<String, dynamic> stock;
+  const _CompanyProfileModal({required this.stock});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            stock['name'] ?? '',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text('Symbol: ${stock['symbol']}'),
+          if (stock['sector'] != null) Text('Sector: ${stock['sector']}'),
+          if (stock['description'] != null) ...[
+            const SizedBox(height: 8),
+            Text(stock['description']),
+          ],
+          const SizedBox(height: 16),
+          Text('Latest Price: KES ${stock['price'] ?? ''}'),
+          Text(
+            'Change: ${stock['change'] ?? ''} (${stock['changePercent'] ?? ''}%)',
+          ),
+          const SizedBox(height: 16),
+          // Placeholder for news/financials
+          const Text('Company news and financials coming soon...'),
+        ],
+      ),
+    );
+  }
+}
+
+class _PersonalizedInsights extends StatelessWidget {
+  final String? selectedStock;
+  final List<Map<String, dynamic>> portfolio;
+  final List<Map<String, dynamic>> tradeHistory;
+  final String? bestStockThisMonth;
+  final double? avgBuyPrice;
+  final String? lastTradeDate;
+  const _PersonalizedInsights({
+    required this.selectedStock,
+    required this.portfolio,
+    required this.tradeHistory,
+    required this.bestStockThisMonth,
+    required this.avgBuyPrice,
+    required this.lastTradeDate,
+  });
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.white10,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Personalized Insights',
+              style: TextStyle(
+                color: Color(0xFFF4C542),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (avgBuyPrice != null)
+              Text(
+                'Avg Buy Price: KES ${avgBuyPrice!.toStringAsFixed(2)}',
+                style: const TextStyle(color: Colors.white),
+              ),
+            if (lastTradeDate != null)
+              Text(
+                'Last Trade: $lastTradeDate',
+                style: const TextStyle(color: Colors.white),
+              ),
+            if (bestStockThisMonth != null)
+              Text(
+                'Best Stock This Month: $bestStockThisMonth',
+                style: const TextStyle(color: Colors.white),
+              ),
+            // Add more insights as needed
           ],
         ),
       ),

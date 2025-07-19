@@ -20,10 +20,15 @@ import 'screens/broker_trades_screen.dart';
 import 'screens/broker_compliance_screen.dart';
 import 'screens/broker_payments_screen.dart';
 import 'screens/broker_profile_screen.dart';
+import 'screens/signup_screen.dart';
+import 'screens/broker_login_screen.dart';
+import 'screens/broker_signup_screen.dart';
 import 'widgets/hisa_ai_assistant_modal.dart';
 import 'services/background_image_service.dart';
 import 'services/app_state_service.dart';
 import 'theme/theme_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'screens/stock_detail_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,24 +42,42 @@ void main() async {
 class HisaHubApp extends StatelessWidget {
   const HisaHubApp({super.key});
 
+  Future<String> _getInitialRoute() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenWelcome = prefs.getBool('hasSeenWelcome') ?? false;
+    return hasSeenWelcome ? '/login' : '/welcome';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => BackgroundImageService()),
-        ChangeNotifierProvider(create: (context) => AppStateService()),
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
-      ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return MaterialApp.router(
-            title: 'HisaHub',
-            theme: themeProvider.currentTheme,
-            routerConfig: _router,
-            debugShowCheckedModeBanner: false,
+    return FutureBuilder<String>(
+      future: _getInitialRoute(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const MaterialApp(
+            home: Scaffold(body: Center(child: CircularProgressIndicator())),
           );
-        },
-      ),
+        }
+        return MultiProvider(
+          providers: [
+            ChangeNotifierProvider(
+              create: (context) => BackgroundImageService(),
+            ),
+            ChangeNotifierProvider(create: (context) => AppStateService()),
+            ChangeNotifierProvider(create: (context) => ThemeProvider()),
+          ],
+          child: Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return MaterialApp.router(
+                title: 'HisaHub',
+                theme: themeProvider.currentTheme,
+                routerConfig: _router,
+                debugShowCheckedModeBanner: false,
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
@@ -78,6 +101,11 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const LoginScreen(),
     ),
     GoRoute(
+      path: '/signup',
+      name: 'signup',
+      builder: (context, state) => const SignupScreen(),
+    ),
+    GoRoute(
       path: '/kyc',
       name: 'kyc',
       builder: (context, state) => const KYCOnboardingScreen(),
@@ -98,6 +126,13 @@ final GoRouter _router = GoRouter(
           builder: (context, state) => const TradeScreen(),
         ),
       ],
+    ),
+    GoRoute(
+      path: '/stock/:symbol',
+      name: 'stock-detail',
+      builder:
+          (context, state) =>
+              StockDetailScreen(symbol: state.pathParameters['symbol'] ?? ''),
     ),
     GoRoute(
       path: '/broker-dashboard',
@@ -126,6 +161,16 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/broker-dashboard/profile',
       builder: (context, state) => const BrokerProfileScreen(),
+    ),
+    GoRoute(
+      path: '/broker-login',
+      name: 'broker-login',
+      builder: (context, state) => const BrokerLoginScreen(),
+    ),
+    GoRoute(
+      path: '/broker-signup',
+      name: 'broker-signup',
+      builder: (context, state) => const BrokerSignupScreen(),
     ),
   ],
   redirect: (context, state) {

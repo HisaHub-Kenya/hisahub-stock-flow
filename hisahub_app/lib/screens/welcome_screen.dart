@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../services/background_image_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -97,17 +98,21 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         curve: Curves.easeInOut,
       );
     } else {
-      _goToHome();
+      _goToAuth();
     }
   }
 
-  void _goToHome() {
+  void _goToAuth() async {
     // Also toggle when skipping to home (for consistency)
     Provider.of<BackgroundImageService>(context, listen: false).toggleImage();
-    context.go('/home');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hasSeenWelcome', true);
+    context.go('/login'); // or your actual login/signup route
   }
 
-  void _skipToHome() {
+  void _skipToHome() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hasSeenWelcome', true);
     context.go('/home');
   }
 
@@ -145,51 +150,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           SafeArea(
             child: Column(
               children: [
-                // Skip Button
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.transparent,
-                            width: 1,
-                          ),
-                        ),
-                        child: TextButton(
-                          onPressed: _skipToHome,
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          ),
-                          child: Text(
-                            'Skip',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
                 // PageView
                 Expanded(
                   child: PageView.builder(
@@ -378,7 +338,39 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Animated Page Indicators
+          // Skip Button (bottom left)
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.transparent, width: 1),
+              ),
+              child: TextButton(
+                onPressed: _skipToHome,
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text(
+                  'Skip',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Animated Page Indicators (center)
           Row(
             children: List.generate(
               _slides.length,
@@ -421,8 +413,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               ),
             ),
           ),
-
-          // Animated Next/Get Started Button
+          // Animated Next/Get Started Button (bottom right)
           TweenAnimationBuilder<double>(
             duration: const Duration(milliseconds: 500),
             tween: Tween(begin: 0.0, end: 1.0),
@@ -466,7 +457,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               _currentPage == _slides.length - 1
                                   ? 'Get Started'
                                   : 'Next',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),

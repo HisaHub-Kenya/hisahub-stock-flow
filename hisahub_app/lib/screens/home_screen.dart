@@ -887,80 +887,6 @@ class HomeScreen extends StatelessWidget {
                         ),
                   ),
                 ),
-                // Sign In/Sign Out Button (Top Right)
-                Selector<AppStateService, bool>(
-                  selector: (_, state) => state.isAuthenticated,
-                  builder:
-                      (context, isAuthenticated, child) => Positioned(
-                        top: 8,
-                        right: 8,
-                        child: MouseRegion(
-                          cursor: SystemMouseCursors.click,
-                          child: GestureDetector(
-                            onTap: () {
-                              if (isAuthenticated) {
-                                showDialog(
-                                  context: context,
-                                  builder:
-                                      (context) => AlertDialog(
-                                        title: const Text('Sign Out'),
-                                        content: const Text(
-                                          'Are you sure you want to sign out?',
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed:
-                                                () => Navigator.pop(context),
-                                            child: const Text('Cancel'),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                              Provider.of<AppStateService>(
-                                                context,
-                                                listen: false,
-                                              ).signOut();
-                                            },
-                                            child: const Text('Sign Out'),
-                                          ),
-                                        ],
-                                      ),
-                                );
-                              } else {
-                                context.go('/login');
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF4C542),
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(
-                                      0xFFF4C542,
-                                    ).withOpacity(0.3),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                isAuthenticated ? 'Sign Out' : 'Sign In',
-                                style: const TextStyle(
-                                  color: Color(0xFF0B1A39),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                ),
                 // Main Content
                 ListView(
                   padding: const EdgeInsets.only(
@@ -1138,6 +1064,86 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+                // Sign In/Sign Out Button (Top Right) - ensure this is last in the Stack
+                Selector<AppStateService, bool>(
+                  selector: (_, state) => state.isAuthenticated,
+                  builder:
+                      (context, isAuthenticated, child) => Positioned(
+                        top: 8,
+                        right: 8,
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTap: () {
+                              if (isAuthenticated) {
+                                showDialog(
+                                  context: context,
+                                  builder:
+                                      (context) => AlertDialog(
+                                        title: const Text('Sign Out'),
+                                        content: const Text(
+                                          'Are you sure you want to sign out?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.pop(context),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              Provider.of<AppStateService>(
+                                                context,
+                                                listen: false,
+                                              ).signOut();
+                                            },
+                                            child: const Text('Sign Out'),
+                                          ),
+                                        ],
+                                      ),
+                                );
+                              } else {
+                                context.go('/login');
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF4C542),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFFF4C542,
+                                    ).withOpacity(0.3),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                                border: Border.all(
+                                  color:
+                                      Colors
+                                          .red, // DEBUG: red border for visibility
+                                  width: 2,
+                                ),
+                              ),
+                              child: Text(
+                                isAuthenticated ? 'Sign Out' : 'Sign In',
+                                style: const TextStyle(
+                                  color: Color(0xFF0B1A39),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                 ),
               ],
             ),
