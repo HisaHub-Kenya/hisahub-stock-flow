@@ -536,53 +536,6 @@ class _TradeScreenState extends State<TradeScreen> {
                   : ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      // --- Indices Summary ---
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children:
-                            indices.map((idx) {
-                              final isUp = (idx['change'] as num? ?? 0) >= 0;
-                              return Card(
-                                color: Colors.white10,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 16,
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        idx['name'].toString(),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        (idx['value'] as num? ?? 0)
-                                            .toStringAsFixed(2),
-                                        style: TextStyle(
-                                          color:
-                                              isUp ? Colors.green : Colors.red,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${isUp ? '+' : ''}${(idx['change'] as num? ?? 0).toStringAsFixed(2)}%',
-                                        style: TextStyle(
-                                          color:
-                                              isUp ? Colors.green : Colors.red,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                      ),
                       // --- Search Stock Container ---
                       const SizedBox(height: 16),
                       _StockSearchBar(
@@ -637,16 +590,6 @@ class _TradeScreenState extends State<TradeScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      // --- Personalized Insights ---
-                      _PersonalizedInsights(
-                        selectedStock: _selectedStock,
-                        portfolio: portfolio,
-                        tradeHistory: tradeHistory,
-                        bestStockThisMonth: bestStockThisMonth(),
-                        avgBuyPrice: avgBuyPrice(_selectedStock ?? ''),
-                        lastTradeDate: lastTradeDate(_selectedStock ?? ''),
-                      ),
-                      const SizedBox(height: 12),
                       // ... Trending Stocks ...
                       const SizedBox(height: 16),
                       Text(
@@ -658,52 +601,79 @@ class _TradeScreenState extends State<TradeScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      SizedBox(
-                        height: 150,
-                        child:
-                            marketData.isEmpty && isLoading
-                                ? ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: 3,
-                                  separatorBuilder:
-                                      (_, __) => const SizedBox(width: 12),
-                                  itemBuilder:
-                                      (context, i) => SkeletonLoaderCard(),
-                                )
-                                : ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: trending.length,
-                                  separatorBuilder:
-                                      (_, __) => const SizedBox(width: 12),
-                                  itemBuilder: (context, i) {
-                                    final t = trending[i];
-                                    return StockCard(
-                                      symbol: t['symbol'],
-                                      name: t['name'],
-                                      price: t['price'],
-                                      trend: t['trend'],
-                                      isStarred: _watchlist.contains(
-                                        t['symbol'],
-                                      ),
-                                      onTap:
-                                          () => context.go(
-                                            '/stock/${t['symbol']}',
-                                          ),
-                                      onStar:
-                                          () => setState(() {
-                                            if (_watchlist.contains(
-                                              t['symbol'],
-                                            )) {
-                                              _watchlist.remove(t['symbol']);
-                                            } else {
-                                              _watchlist.add(t['symbol']);
-                                            }
-                                          }),
-                                      performance: getPerformanceBadge(t),
-                                      riskWarning: isVolatile(t),
-                                    );
-                                  },
+                      Builder(
+                        builder: (context) {
+                          // Combine gainers and losers, sort by absolute % change descending
+                          final trending = [...gainers, ...losers];
+                          trending.sort(
+                            (a, b) => ((b['changePercent'] as num? ?? 0).abs())
+                                .compareTo(
+                                  (a['changePercent'] as num? ?? 0).abs(),
                                 ),
+                          );
+                          if (trending.isEmpty) {
+                            return const Text(
+                              'No trending stocks available.',
+                              style: TextStyle(color: Colors.white70),
+                            );
+                          }
+                          return ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: trending.length,
+                            separatorBuilder:
+                                (_, __) => const SizedBox(height: 4),
+                            itemBuilder: (context, i) {
+                              final t = trending[i];
+                              final symbol = (t['symbol'] ?? '').toString();
+                              final name = (t['name'] ?? '').toString();
+                              final change =
+                                  (t['changePercent'] as num? ?? 0.0)
+                                      .toDouble();
+                              final isPositive = change >= 0;
+                              final changeText =
+                                  '${isPositive ? '+' : ''}${change.toStringAsFixed(2)}%';
+                              return Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => context.go('/stock/$symbol'),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 4.0,
+                                      horizontal: 2.0,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          '$name ($symbol)',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 15,
+                                            decoration:
+                                                TextDecoration.underline,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          changeText,
+                                          style: TextStyle(
+                                            color:
+                                                isPositive
+                                                    ? Colors.green
+                                                    : Colors.red,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
                       ),
                       // ... Market Data Container ...
                       const SizedBox(height: 16),
@@ -1670,56 +1640,7 @@ class _StockFilterBarState extends State<_StockFilterBar> {
           ),
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children:
-              _applyFilter()
-                  .map<Widget>(
-                    (stock) => GestureDetector(
-                      onTap: () {
-                        // Navigate to stock detail page using go_router
-                        context.go('/stock/${stock['symbol']}');
-                      },
-                      child: Chip(
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '${stock['name']} (${stock['symbol']})',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                            const SizedBox(width: 4),
-                            MiniChartWidget(history: stock['history'] ?? []),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.shopping_cart,
-                                color: Colors.green,
-                                size: 18,
-                              ),
-                              tooltip: 'Quick Buy',
-                              onPressed: () {
-                                // Quick buy logic
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.sell,
-                                color: Colors.red,
-                                size: 18,
-                              ),
-                              tooltip: 'Quick Sell',
-                              onPressed: () {
-                                // Quick sell logic
-                              },
-                            ),
-                          ],
-                        ),
-                        backgroundColor: Colors.white10,
-                      ),
-                    ),
-                  )
-                  .toList(),
-        ),
+        // Removed stock name chips
       ],
     );
   }
@@ -1864,4 +1785,180 @@ class _PersonalizedInsights extends StatelessWidget {
       ),
     );
   }
+}
+
+class SkeletonLoaderCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 120,
+      constraints: BoxConstraints(maxHeight: 140),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white12,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 60,
+              height: 16,
+              color: Colors.white24,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+            ),
+            Container(
+              width: 80,
+              height: 16,
+              color: Colors.white24,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+            ),
+            Container(
+              width: 40,
+              height: 16,
+              color: Colors.white24,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class StockCard extends StatelessWidget {
+  final String symbol;
+  final String name;
+  final double price;
+  final List<dynamic> trend;
+  final bool isStarred;
+  final VoidCallback onTap;
+  final VoidCallback onStar;
+  final Widget? performance;
+  final Widget? riskWarning;
+
+  const StockCard({
+    required this.symbol,
+    required this.name,
+    required this.price,
+    required this.trend,
+    required this.isStarred,
+    required this.onTap,
+    required this.onStar,
+    this.performance,
+    this.riskWarning,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        color: Colors.white10,
+        child: Container(
+          constraints: BoxConstraints(maxHeight: 140),
+          padding: const EdgeInsets.all(12.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      symbol,
+                      style: const TextStyle(
+                        color: Color(0xFFF4C542),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: Icon(
+                        isStarred ? Icons.star : Icons.star_border,
+                        color: isStarred ? Colors.amber : Colors.white54,
+                      ),
+                      onPressed: onStar,
+                    ),
+                  ],
+                ),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'KES ${price.toStringAsFixed(2)}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 4),
+                if (performance != null) performance!,
+                if (riskWarning != null) riskWarning!,
+                const SizedBox(height: 4),
+                MiniChartWidget(history: trend.cast<double>()),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Widget getPerformanceBadge(Map<String, dynamic> t) {
+  final change = t['changePercent'] ?? 0.0;
+  final isPositive = change >= 0;
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    decoration: BoxDecoration(
+      color:
+          isPositive
+              ? Colors.green.withOpacity(0.2)
+              : Colors.red.withOpacity(0.2),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      '${isPositive ? '+' : ''}${change.toStringAsFixed(2)}%',
+      style: TextStyle(
+        color: isPositive ? Colors.green : Colors.red,
+        fontWeight: FontWeight.bold,
+        fontSize: 12,
+      ),
+    ),
+  );
+}
+
+Widget isVolatile(Map<String, dynamic> t) {
+  final trend = t['trend'] as List<dynamic>? ?? [];
+  if (trend.length < 2) return const SizedBox.shrink();
+  final prices = trend.cast<double>();
+  final max = prices.reduce((a, b) => a > b ? a : b);
+  final min = prices.reduce((a, b) => a < b ? a : b);
+  final volatility = (max - min) / (min == 0 ? 1 : min);
+  if (volatility > 0.1) {
+    return Container(
+      margin: const EdgeInsets.only(top: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Text(
+        'Volatile',
+        style: TextStyle(
+          color: Colors.orange,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+  return const SizedBox.shrink();
 }
