@@ -29,3 +29,20 @@ class LoginView(APIView):
     def post(self, request):
         # In production, verify Firebase ID token
         return Response({'message': 'Firebase handles login on frontend'}, status=status.HTTP_200_OK)
+
+class CurrentUserView(APIView):
+    def get(self, request):
+        id_token = request.META.get('HTTP_AUTHORIZATION', '').split('Bearer ')[-1]
+        try:
+            decoded_token = auth.verify_id_token(id_token)
+            uid = decoded_token.get('uid')
+            email = decoded_token.get('email')
+            name = decoded_token.get('name', '')  # Optional
+
+            return Response({
+                'uid': uid,
+                'email': email,
+                'display_name': name
+            })
+        except Exception as e:
+            return Response({'error': 'Invalid token or user not authenticated', 'details': str(e)}, status=status.HTTP_401_UNAUTHORIZED)

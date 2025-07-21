@@ -14,3 +14,6 @@ from django.core.asgi import get_asgi_application
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Backend.settings')
 
 application = get_asgi_application()
+def ready(self):
+    import yourapp.signals
+    import stocks.signals  # Ensure signals are imported to register them

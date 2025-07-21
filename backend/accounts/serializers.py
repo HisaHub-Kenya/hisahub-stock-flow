@@ -1,13 +1,12 @@
 from rest_framework import serializers
-import bcrypt
+from .models import FirebaseUser
 
 class SignUpSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
-    display_name = serializers.CharField()
+    password = serializers.CharField()
+    display_name = serializers.CharField(required=False)
 
-    def create(self, validated_data):
-        password = validated_data.pop('password')
-        hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-        validated_data['password'] = hashed_password.decode()
-        return validated_data
+class FirebaseUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FirebaseUser
+        fields = ['uid', 'email', 'display_name', 'created_at']
