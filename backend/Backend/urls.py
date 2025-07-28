@@ -19,7 +19,9 @@ from django.urls import path, include
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from stocks.views import StockDetailView
-
+from django.http import JsonResponse
+def root_view(request):
+    return JsonResponse({"message": "Welcome to the HisaHub API"})
 schema_view = get_schema_view(
     openapi.Info(title="Stock API", default_version='v1'),
     public=True,

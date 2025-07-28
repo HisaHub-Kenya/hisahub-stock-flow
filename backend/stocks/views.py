@@ -2,7 +2,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view  
-
 from django.utils.dateparse import parse_datetime
 from django.db.models import F, ExpressionWrapper, FloatField, Q
 from .models import Stock
@@ -10,6 +9,8 @@ from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from rest_framework.pagination import PageNumberPagination
 from .serializers import StockSerializer
+# views.py or your relevant module
+from .serializers import LightweightStockSerializer
 from .services import get_trending_stocks
 
 @method_decorator(cache_page(60 * 5), name='dispatch') # Cache the view for 5 minutes
@@ -29,7 +30,7 @@ class TrendingStocksView(APIView):# include trending stocks view for sorting and
 class StockDetailView(APIView):
     def get(self, request, symbol):
         try:
-            stock = Stock.objects.get(symbol__iexact=symbol)
+            stock = Stock.objects.all()
         except Stock.DoesNotExist:
             return Response({'error': 'Stock not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -59,5 +60,4 @@ def batch_stock_fetch(request):
         "stocks": serializer.data,
         "missing": missing
     }, status=status.HTTP_200_OK)
-       
 

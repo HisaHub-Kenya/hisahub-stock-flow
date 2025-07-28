@@ -6,8 +6,10 @@ class Stock(models.Model):
     current_price = models.DecimalField(max_digits=10, decimal_places=2)
     previous_price = models.DecimalField(max_digits=10, decimal_places=2)
     volume = models.IntegerField(default=0)
+    treading_score = models.FloatField(default=0.0)
     last_updated = models.DateTimeField(auto_now=True)
-
+    percent_change = models.FloatField()
+    
     def percentage_change(self):
         if self.previous_price == 0:
             return 0

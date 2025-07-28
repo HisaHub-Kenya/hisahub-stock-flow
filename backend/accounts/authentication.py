@@ -20,3 +20,4 @@ class FirebaseAuthentication(BaseAuthentication):
 
         user, _ = User.objects.get_or_create(username=uid, defaults={'email': email})
         return (user, None)
+    

@@ -6,6 +6,7 @@ from decouple import config
 import os
 from pathlib import Path
 
+
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -29,13 +30,18 @@ INSTALLED_APPS = [
 
     # Third-party apps
     'rest_framework',
-    'django_celery_beat'
+    'django_celery_beat',
 
     # Local apps
     'accounts',
     'stocks',
 ]
-import firebase.py  # Initialize Firebase
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Ensure Redis is running
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+# Firebase initialization
+import firebase_config    # Initialize Firebase
 # REST framework configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -112,6 +118,19 @@ CACHES = {
 
     }
 }
+
+# mpesa cofigurations   
+
+MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY", "your_consumer_key")
+MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET", "your_consumer_secret")
+MPESA_PASSKEY = os.getenv("MPESA_PASSKEY", "your_lnm_passkey")
+MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE", "174379")  # Test shortcode
+
+ # paypal configurations
+PAYPAL_CLIENT_ID = 'your-paypal-client-id'
+PAYPAL_SECRET = 'your-paypal-secret'
+PAYPAL_RETURN_URL = 'https://yourdomain.com/paypal/return/'
+PAYPAL_CANCEL_URL = 'https://yourdomain.com/paypal/cancel/'
 
 
 # Internationalization
