@@ -8,19 +8,57 @@ from .stripe import create_card_payment
 from .mpesa import lipa_na_mpesa
 from .paypal import create_paypal_payment
 from .crypto import create_crypto_payment
+from .utils import success_response, error_response
+from .mpesa import withdraw_from_mpesa
+from .mpesa import validate_currency
+# ----------------------------
+# ✅ PAYMENT HANDLER
+# ----------------------------
+def handle_payment(method, amount, user, action, currency="USD"):
+    try:
+        currency = validate_currency(currency)
+    except ValueError as e:
+        return {"error": str(e)}
 
-# ----------------------------
-# 🔁 SHARED PAYMENT HANDLER
-# ----------------------------
-def handle_payment(method, amount, user, action):
+    # -------------------
+    # ✅ Card / Stripe
+    # -------------------
     if method == 'card':
-        return create_card_payment(amount)
+        if action == 'deposit':
+            return create_card_payment(amount, currency)
+        elif action == 'withdrawal':
+            return transfer_to_card(amount, user, currency)
+        else:
+            return {"error": "Unsupported card action"}
+
+    # -------------------
+    # ✅ M-Pesa
+    # -------------------
     elif method == 'mpesa':
-        return lipa_na_mpesa(amount, user.phone_number)
+        if action == 'deposit':
+            if hasattr(user, "phone_number"):
+                return lipa_na_mpesa(amount, user.phone_number)
+            else:
+                return {"error": "User has no phone number for M-Pesa"}
+        elif action == 'withdrawal':
+            if hasattr(user, "phone_number"):
+                return withdraw_from_mpesa(amount, user.phone_number)
+            else:
+                return {"error": "User has no phone number for M-Pesa"}
+        else:
+            return {"error": "Unsupported M-Pesa action"}
+
+    #  PayPal
+    
     elif method == 'paypal':
         return create_paypal_payment(amount, user, action)
+
+    #  Crypto
+
     elif method == 'crypto':
-        return create_crypto_payment(amount, user, action)
+        return create_crypto_payment(amount, user, action, currency)
+
+    # -------------------
     else:
         return {"error": "Unsupported payment method"}
 
@@ -32,23 +70,25 @@ class DepositView(APIView):
     def post(self, request):
         method = request.data.get("method")
         amount = float(request.data.get("amount", 0))
+        currency = request.data.get("currency", "USD").upper()
         user = request.user  # from Firebase token
 
         if amount <= 0:
             return Response({"error": "Invalid amount"}, status=400)
 
-        result = handle_payment(method, amount, user, "deposit")
+        result = handle_payment(method, amount, user, "deposit",currency)
 
         Transaction.objects.create(
             user=user,
             transaction_type='deposit',
             payment_method=method,
+            currency=currency,
             amount=amount,
             reference_id=result.get('reference'),
             status='pending'
         )
 
-        return Response(result, status=200)
+        return Response(result,message='Deposit initiated', status=200)
 
 
 # ----------------------------
@@ -59,15 +99,19 @@ class WithdrawView(APIView):
         method = request.data.get("method")
         amount = float(request.data.get("amount", 0))
         user = request.user
-
-        if amount <= 0:
-            return Response({"error": "Invalid amount"}, status=400)
-
-        # Optional: Check wallet balance
-        # if user.wallet_balance < amount:
-        #     return Response({"error": "Insufficient funds"}, status=400)
+        
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                return error_response("Invalid amount")
+        except (ValueError, TypeError):
+            return error_response("Invalid amount format")
+        
+        # Optional: Check wallet balance here
 
         result = handle_payment(method, amount, user, "withdrawal")
+        if "error" in result:
+            return error_response(result["error"], status=400)
 
         Transaction.objects.create(
             user=user,
@@ -113,7 +157,7 @@ def mpesa_callback(request):
 @api_view(['POST'])
 def stripe_webhook(request):
     import stripe
-    stripe.api_key = "your_stripe_secret"
+    stripe.api_key = "my_stripe_secret"
     payload = request.body
     event = None
 

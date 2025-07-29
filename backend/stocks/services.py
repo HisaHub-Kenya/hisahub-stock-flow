@@ -1,4 +1,4 @@
-from .models import Stock
+from .models import Stock, StockPriceHistory
 from datetime import timedelta
 from django.utils import timezone
 
