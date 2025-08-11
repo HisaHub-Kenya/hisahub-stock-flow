@@ -20,6 +20,7 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from stocks.views import StockDetailView
 from django.http import JsonResponse
+from .view import WalletView, ProcessMockOrder, OrderHistoryView
 def root_view(request):
     return JsonResponse({"message": "Welcome to the HisaHub API"})
 schema_view = get_schema_view(
@@ -31,6 +32,9 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),
     path('api/stocks/', include('stocks.urls')),
     path("api/payments/", include('payments.urls')),
+    path("mock-order/", ProcessMockOrder.as_view(), name="mock-order"),
+    path("wallet/", WalletView.as_view(), name="wallet"),
+    path('api/orders/', include('orders.urls')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     ]
 

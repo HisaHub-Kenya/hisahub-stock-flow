@@ -36,8 +36,10 @@ INSTALLED_APPS = [
     'accounts',
     'stocks',
     'payments',
+    'channels',
 ]
 CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Ensure Redis is running
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
@@ -140,6 +142,30 @@ COINBASE_API_KEY = os.getenv('COINBASE_API_KEY')
 # Stripe Keys
 STRIPE_PUBLIC_KEY = "pk_test_XXXXXXXXXXXXXXXXXXXXXXXX"
 STRIPE_SECRET_KEY = "sk_test_XXXXXXXXXXXXXXXXXXXXXXXX"
+
+ASGI_APPLICATION = 'Backend.asgi.application'
+
+# Channels config (Redis channel layer)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': ["redis://127.0.0.1:6379/1"],
+        },
+    },
+}
+
+# Redis URL for presence/other uses
+REDIS_URL = 'redis://127.0.0.1:6379/2'
+
+
+# Firebase Admin initialization (do this in project startup, e.g., project/firebase_init.py)
+# import firebase_admin
+# from firebase_admin import credentials
+# cred = credentials.Certificate('/path/to/serviceAccountKey.json')
+# firebase_admin.initialize_app(cred)
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'yourdomain.com']
 
 
 
