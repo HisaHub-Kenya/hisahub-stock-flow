@@ -36,8 +36,11 @@ INSTALLED_APPS = [
     'accounts',
     'stocks',
     'payments',
+    'channels',
 ]
+
 CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Ensure Redis is running
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
@@ -142,6 +145,24 @@ STRIPE_PUBLIC_KEY = "pk_test_XXXXXXXXXXXXXXXXXXXXXXXX"
 STRIPE_SECRET_KEY = "sk_test_XXXXXXXXXXXXXXXXXXXXXXXX"
 
 
+# ASGI for Django Channels
+ASGI_APPLICATION = 'Backend.asgi.application'
+
+# Channels config (Redis channel layer)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': ["redis://127.0.0.1:6379/1"],
+        },
+    },
+}
+
+# Redis URL for presence/other uses
+REDIS_URL = 'redis://127.0.0.1:6379/2'
+
+# Hosts
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'yourdomain.com']
 
 
 # Internationalization
