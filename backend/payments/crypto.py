@@ -43,3 +43,8 @@ def handle_crypto(amount, user, type,currency="USD"):
     else:
         return {"error": "Crypto withdrawals are only available manually or via custodial wallet APIs."}
     
+# payments/crypto.py
+
+def create_crypto_payment(request_data):
+    # Sample implementation
+    return {"status": "success", "message": "Crypto payment initiated"}

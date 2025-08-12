@@ -17,7 +17,7 @@ class Transaction(models.Model):
     )
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    currency = models.CharField(max_length=10, default="KSH")  
+    currency = models.CharField(max_length=10, default="USD")  
     paypal_email = models.EmailField(null=True, blank=True)
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS)

@@ -10,7 +10,8 @@ from .paypal import create_paypal_payment
 from .crypto import create_crypto_payment
 from .utils import success_response, error_response
 from .mpesa import withdraw_from_mpesa
-from .mpesa import validate_currency
+from .utils import validate_currency
+from .stripe import transfer_to_card
 # ----------------------------
 # ✅ PAYMENT HANDLER
 # ----------------------------

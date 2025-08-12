@@ -35,8 +35,12 @@ INSTALLED_APPS = [
     # Local apps
     'accounts',
     'stocks',
+    'payments',
+    'channels',
 ]
+
 CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Ensure Redis is running
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
@@ -131,6 +135,34 @@ PAYPAL_CLIENT_ID = 'your-paypal-client-id'
 PAYPAL_SECRET = 'your-paypal-secret'
 PAYPAL_RETURN_URL = 'https://yourdomain.com/paypal/return/'
 PAYPAL_CANCEL_URL = 'https://yourdomain.com/paypal/cancel/'
+
+ # coinbase configurations
+COINBASE_API_BASE_URL = 'https://api.coinbase.com/v2/'
+COINBASE_API_KEY = os.getenv('COINBASE_API_KEY')
+
+# Stripe Keys
+STRIPE_PUBLIC_KEY = "pk_test_XXXXXXXXXXXXXXXXXXXXXXXX"
+STRIPE_SECRET_KEY = "sk_test_XXXXXXXXXXXXXXXXXXXXXXXX"
+
+
+# ASGI for Django Channels
+ASGI_APPLICATION = 'Backend.asgi.application'
+
+# Channels config (Redis channel layer)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': ["redis://127.0.0.1:6379/1"],
+        },
+    },
+}
+
+# Redis URL for presence/other uses
+REDIS_URL = 'redis://127.0.0.1:6379/2'
+
+# Hosts
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'yourdomain.com']
 
 
 # Internationalization

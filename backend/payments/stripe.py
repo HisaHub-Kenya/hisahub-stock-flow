@@ -13,3 +13,18 @@ def create_card_payment(amount, currency="usd"):
         DESCRIPTION="Deposit via card",
     )
     return payment_intent.client_secret
+
+def transfer_to_card(amount, user, currency="usd"):
+    try:
+        payout = stripe.Payout.create(
+            amount=int(amount * 100),
+            currency=currency,
+            method="standard",
+            description="User withdrawal payout"
+        )
+        return {
+            "reference": payout.id,
+            "status": "pending"
+        }
+    except stripe.error.StripeError as e:
+        return {"error": str(e)}
