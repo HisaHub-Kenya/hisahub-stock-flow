@@ -9,6 +9,8 @@ from firebase_admin import auth
 from .models import FirebaseUser, UserProfile, BrokerProfile
 from .serializers import SignUpSerializer
 from django.core.mail import send_mail
+from accounts.permissions import IsBroker
+from rest_framework.permissions import IsAuthenticated
 
 
 #  User SignUp View
@@ -150,22 +152,9 @@ class UploadKYCView(APIView):
 
 
 #  Admin Verifies Broker
-class VerifyingBrokerView(APIView):
-    permission_classes = [IsAdminUser]
+class BrokerOnlyView(APIView):
+    permission_classes = [IsAuthenticated, IsBroker]
 
-    def post(self, request, uid):
-        try:
-            broker = BrokerProfile.objects.get(uid=uid)
-            broker.verified = True
-            broker.save()
-            # Optionally, send a notification to the broker about verification
-            send_mail(
-                subject='Broker Verification Successful',
-                message='Your broker profile has been successfully verified.', 
-                from_email='Hisanubkenya@outlook.com',
-                recipient_list=[broker.email],
-                fail_silently=False
-            )
-            return Response({'message': 'Broker verified successfully'}, status=status.HTTP_200_OK)
-        except BrokerProfile.DoesNotExist:
-            return Response({'error': 'Broker not found'}, status=status.HTTP_404_NOT_FOUND)
+    def get(self, request):
+        user = request.user
+        return Response({'message': 'hello broker ',"id": user.id}, status=status.HTTP_200_OK)   

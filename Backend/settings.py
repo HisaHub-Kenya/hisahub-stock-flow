@@ -49,10 +49,10 @@ import firebase_config    # Initialize Firebase
 # REST framework configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'accounts.authentication.FirebaseAuthentication',
+        'accounts.auth_middleware.FirebaseAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.authentication.SessionAuthentication',
     ],
     
 }
@@ -106,6 +106,13 @@ DATABASES = {
         'PORT': config('DB_PORT', default='5432'),
     }
 }
+
+# Default auto field
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Use custom User model from accounts app
+AUTH_USER_MODEL = 'accounts.User'
+
 
 # Password validators
 AUTH_PASSWORD_VALIDATORS = [
@@ -176,3 +183,13 @@ STATIC_URL = 'static/'
 
 # Default auto field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
+sentry_sdk.init(
+    dsn=config('SENTRY_DSN', default=''),
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=1.0,
+    send_default_pii=True,
+)

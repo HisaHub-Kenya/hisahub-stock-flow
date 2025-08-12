@@ -1,23 +1,43 @@
-from rest_framework.authentication import BaseAuthentication
-from rest_framework.exceptions import AuthenticationFailed
-from firebase_admin import auth
-from django.contrib.auth.models import User
+from firebase_admin import auth as firebase_auth
+from django.conf import settings
+from rest_framework import authentication, exceptions
+from .models import User
 
-class FirebaseAuthentication(BaseAuthentication):
+class FirebaseAuthentication(authentication.BaseAuthentication):
+    """
+    Authenticate requests using Firebase ID tokens.
+    """
+
     def authenticate(self, request):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
+        header = request.META.get('HTTP_AUTHORIZATION')
+        if not header:
             return None
-
-        id_token = auth_header.split('Bearer ')[1]
-
+        if not header.startswith('Bearer '):
+            return None
+        id_token = header.split('Bearer ')[1]
         try:
-            decoded_token = auth.verify_id_token(id_token)
-            uid = decoded_token['uid']
-            email = decoded_token.get('email')
-        except Exception:
-            raise AuthenticationFailed('Invalid Firebase token.')
+            decoded = firebase_auth.verify_id_token(id_token, check_revoked=True)
+        except firebase_auth.InvalidIdTokenError:
+            raise exceptions.AuthenticationFailed("Invalid Firebase ID token.")
+        except firebase_auth.ExpiredIdTokenError:
+            raise exceptions.AuthenticationFailed("Expired Firebase ID token.")
+        except firebase_auth.RevokedIdTokenError:
+            raise exceptions.AuthenticationFailed("Revoked Firebase ID token.")
+        except Exception as e:
+            raise exceptions.AuthenticationFailed(f"Failed auth: {e}")
 
-        user, _ = User.objects.get_or_create(username=uid, defaults={'email': email})
+        uid = decoded.get('uid')
+        if not uid:
+            raise exceptions.AuthenticationFailed("Invalid token payload.")
+
+        # Map to local user or create if missing
+        try:
+            user = User.objects.get(firebase_uid=uid)
+        except User.DoesNotExist:
+            # Optionally create a stub user in local DB
+            email = decoded.get('email')
+            user = User.objects.create(username=email or uid, email=email or '', firebase_uid=uid)
+            user.save()
+        # Attach firebase claims for role checks
+        user.firebase_claims = decoded.get('claims', {})  # may be empty
         return (user, None)
-    
