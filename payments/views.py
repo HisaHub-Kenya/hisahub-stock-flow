@@ -3,8 +3,6 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
 
-from backend.payments.stripe import transfer_to_card
-
 from .models import Transaction
 from .stripe import create_card_payment
 from .mpesa import lipa_na_mpesa
@@ -194,10 +192,10 @@ def paypal_webhook(request):
 
     txn = Transaction.objects.filter(reference_id=reference).first()
     if txn:
-        if event_type == "PAYMENT.CAPTURE.COMPLETED":
-            txn.status = Transaction.TRANSACTION_STATUS.SUCCESS
+        if event_type == "CHECKOUT.ORDER.APPROVED":
+            txn.status = 'success'
         elif event_type == "PAYMENT.CAPTURE.DENIED":
-            txn.status = Transaction.TRANSACTION_STATUS.FAILED
+            txn.status = 'failed'
         txn.save()
 
     return Response({"message": "PayPal webhook received"}, status=200)

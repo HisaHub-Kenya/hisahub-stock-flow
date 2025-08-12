@@ -1,47 +1,76 @@
+from django.db import IntegrityError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAdminUser
+from rest_framework.parsers import MultiPartParser
 from firebase_admin import auth
-from .models import FirebaseUser
-from .serializers import SignUpSerializer
-from django.db import IntegrityError
 
-#  SignUp Endpoint
+from .models import FirebaseUser, UserProfile, BrokerProfile
+from .serializers import SignUpSerializer
+from django.core.mail import send_mail
+
+
+#  User SignUp View
 class SignUpView(APIView):
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
             data = serializer.validated_data
             try:
-                # Firebase user creation
-                user = auth.create_user(
+                # Create user in Firebase
+                firebase_user = auth.create_user(
                     email=data['email'],
                     password=data['password'],
                     display_name=data.get('display_name', '')
                 )
-                # Local DB creation
+
+                # Save FirebaseUser locally
                 FirebaseUser.objects.create(
-                    uid=user.uid,
-                    email=user.email,
-                    display_name=user.display_name
+                    uid=firebase_user.uid,
+                    email=firebase_user.email,
+                    display_name=firebase_user.display_name
                 )
+
+                # Create UserProfile or BrokerProfile based on role
+                role = data['role']
+                if role == 'user':
+                    UserProfile.objects.create(
+                        uid=firebase_user.uid,
+                        full_name=data['display_name'],
+                        email=data['email'],
+                        phone=data.get('phone', '')
+                    )
+                elif role == 'broker':
+                    BrokerProfile.objects.create(
+                        uid=firebase_user.uid,
+                        full_name=data['display_name'],
+                        email=data['email'],
+                        phone=data.get('phone', ''),
+                        company_name=data.get('company_name', ''),
+                        license_id=data.get('license_id', ''),
+                        verified=False
+                    )
+
                 return Response({
-                    'uid': user.uid,
-                    'email': user.email,
-                    'display_name': user.display_name
+                    'uid': firebase_user.uid,
+                    'email': firebase_user.email,
+                    'display_name': firebase_user.display_name,
+                    'role': role
                 }, status=status.HTTP_201_CREATED)
 
             except IntegrityError:
                 return Response({'error': 'Email already registered'}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
                 return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-#  Login Endpoint using Firebase ID Token
+
+#  Login with Firebase ID Token
 class LoginView(APIView):
     def post(self, request):
         id_token = request.data.get("idToken")
-
         if not id_token:
             return Response({'error': 'ID token is required'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -62,7 +91,8 @@ class LoginView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
 
-#  Get current user (requires token in Authorization header)
+
+#  Get Currently Authenticated User
 class CurrentUserView(APIView):
     def get(self, request):
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
@@ -88,3 +118,54 @@ class CurrentUserView(APIView):
                 'error': 'Invalid token or user not authenticated',
                 'details': str(e)
             }, status=status.HTTP_401_UNAUTHORIZED)
+
+
+#  Upload KYC Document (for both user and broker)
+class UploadKYCView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        uid = request.data.get('uid')
+        kyc_doc = request.data.get('kyc_document')
+        role = request.data.get('role')
+
+        if not uid or not kyc_doc or not role:
+            return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if role == 'user':
+                profile = UserProfile.objects.get(uid=uid)
+            elif role == 'broker':
+                profile = BrokerProfile.objects.get(uid=uid)
+            else:
+                return Response({'error': 'Invalid role'}, status=status.HTTP_400_BAD_REQUEST)
+
+            profile.kyc_document = kyc_doc
+            profile.kyc_verified = False  # Manual review pending
+            profile.save()
+
+            return Response({'message': 'KYC document uploaded successfully'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+#  Admin Verifies Broker
+class VerifyingBrokerView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, uid):
+        try:
+            broker = BrokerProfile.objects.get(uid=uid)
+            broker.verified = True
+            broker.save()
+            # Optionally, send a notification to the broker about verification
+            send_mail(
+                subject='Broker Verification Successful',
+                message='Your broker profile has been successfully verified.', 
+                from_email='Hisanubkenya@outlook.com',
+                recipient_list=[broker.email],
+                fail_silently=False
+            )
+            return Response({'message': 'Broker verified successfully'}, status=status.HTTP_200_OK)
+        except BrokerProfile.DoesNotExist:
+            return Response({'error': 'Broker not found'}, status=status.HTTP_404_NOT_FOUND)

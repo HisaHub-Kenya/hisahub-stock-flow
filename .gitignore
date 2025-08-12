@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
 # Logs
 logs
 *.log
@@ -22,3 +25,29 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+=======
+>>>>>>> backend-fix
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+
+# Virtualenv
+.venv/
+env/
+ENV/
+*.env
+
+# Django
+db.sqlite3
+*.log
+
+# VSCode
+.vscode/
+
+# Firebase credentials
+*.json
+<<<<<<< HEAD
+=======
+>>>>>>> e87ae41 (Updated payment methods with shell code)
+>>>>>>> backend-fix
