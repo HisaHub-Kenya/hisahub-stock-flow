@@ -5,6 +5,8 @@ from firebase_admin import auth
 from .models import FirebaseUser
 from .serializers import SignUpSerializer
 from django.db import IntegrityError
+from .serializers import PortfolioSummarySerializer
+from .utils import get_chart_data
 
 #  SignUp Endpoint
 class SignUpView(APIView):
@@ -88,3 +90,17 @@ class CurrentUserView(APIView):
                 'error': 'Invalid token or user not authenticated',
                 'details': str(e)
             }, status=status.HTTP_401_UNAUTHORIZED)
+
+class PortfolioView(APIView):
+    def get(self, request):
+        user = request.user
+        summary = PortfolioSummarySerializer(user).data
+        
+        return Response({
+            "summary": summary,
+            "charts": {
+                "by_market_type": get_chart_data(user, "market_type"),
+                "by_exchange": get_chart_data(user, "exchange"),
+                "by_sector": get_chart_data(user, "sector"),
+            }
+        })

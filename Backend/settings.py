@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'stocks',
     'payments',
     'channels',
+    'news',
+    'trading',
+    'analytics',
 ]
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Ensure Redis is running

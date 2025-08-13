@@ -1,7 +1,7 @@
 import firebase_admin
 #from firebase_admin import credentials
 #from django.conf import settings
-from .celery import app as celery_app
+from .celeryconfig import app as celery_app
 
 __all__ = ('celery_app',)
 

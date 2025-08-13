@@ -11,6 +11,8 @@ from .serializers import SignUpSerializer
 from django.core.mail import send_mail
 from accounts.permissions import IsBroker
 from rest_framework.permissions import IsAuthenticated
+from.serializers import PortfolioSummarySerializer
+from .utils import get_chart_data
 
 
 #  User SignUp View
@@ -158,3 +160,27 @@ class BrokerOnlyView(APIView):
     def get(self, request):
         user = request.user
         return Response({'message': 'hello broker ',"id": user.id}, status=status.HTTP_200_OK)   
+    
+    
+#  Portfolio Summary View
+class PortfolioView(APIView):
+    def get(self, request):
+        user = request.user
+        
+        # Get  date range from query params
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
+        
+        summary = PortfolioSummarySerializer(user, context={
+            "start_date": start_date,
+            "end_date": end_date
+        }).data
+        
+        return Response({
+            "summary": summary,
+            "charts": {
+                "by_market_type": get_chart_data(user, "market_type", start_date, end_date),
+                "by_exchange": get_chart_data(user, "exchange", start_date, end_date),
+                "by_sector": get_chart_data(user, "sector", start_date, end_date),
+            }
+        })
