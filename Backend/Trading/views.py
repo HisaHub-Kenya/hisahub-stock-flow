@@ -3,13 +3,24 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db import transaction
 from django.utils import timezone
-from decimal import Decimal, ROUND_DOWN
+from decimal import Decimal
 from .models import Order, Wallet, Holding, OutboxMessage
 from .serializers import OrderSerializer
 
-# helper for consistent decimal quantization
-DEC_PLACES = Decimal('0.00000001')  # 8 decimal places for quantities & avg_price
-CURR_PLACES = Decimal('0.01')       # 2 decimal places for currency display where needed
+# Helper for consistent decimal quantization
+DEC_PLACES = Decimal('0.00000001')  # 8 decimal places
+CURR_PLACES = Decimal('0.01')       # 2 decimal places
+
+
+class OrderListView(generics.ListAPIView):
+    """
+    List all orders for the authenticated user
+    """
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user).order_by('-created_at')
 
 
 class CreateOrderView(generics.CreateAPIView):
@@ -30,12 +41,11 @@ class CreateOrderView(generics.CreateAPIView):
         amount = (price * quantity).quantize(DEC_PLACES)
 
         with transaction.atomic():
-            # lock wallet and relevant holding row
             wallet, _ = Wallet.objects.select_for_update().get_or_create(user=user)
             holding_qs = Holding.objects.select_for_update().filter(user=user, symbol=symbol)
-            holding = holding_qs.first()  # may be None
+            holding = holding_qs.first()
 
-            # create order (pending by default)
+            # Create pending order
             order = Order.objects.create(
                 user=user,
                 symbol=symbol,
@@ -46,13 +56,12 @@ class CreateOrderView(generics.CreateAPIView):
                 status='pending'
             )
 
-            # BUY path
+            # ---- BUY PATH ----
             if side == 'buy':
                 if wallet.balance < amount:
                     order.status = 'failed'
                     order.note = 'Insufficient funds'
-                    order.save(update_fields=['status','note'])
-                    # write outbox for failed order (optional)
+                    order.save(update_fields=['status', 'note'])
                     OutboxMessage.objects.create(
                         message_type='order_failed',
                         payload={'order_id': str(order.id), 'reason': order.note},
@@ -60,47 +69,34 @@ class CreateOrderView(generics.CreateAPIView):
                     )
                     return Response({'error': order.note}, status=status.HTTP_400_BAD_REQUEST)
 
-                # Deduct funds
                 wallet.balance = (wallet.balance - amount).quantize(DEC_PLACES)
                 wallet.save(update_fields=['balance'])
 
-                # Update holdings & avg_price
-                if holding:
-                    prev_qty = holding.quantity
-                    prev_avg = holding.avg_price
-                else:
-                    prev_qty = Decimal('0')
-                    prev_avg = Decimal('0')
+                prev_qty = holding.quantity if holding else Decimal('0')
+                prev_avg = holding.avg_price if holding else Decimal('0')
 
                 new_qty = (prev_qty + quantity).quantize(DEC_PLACES)
-                if new_qty > 0:
-                    prev_total = (prev_qty * prev_avg).quantize(DEC_PLACES)
-                    new_total = (prev_total + amount).quantize(DEC_PLACES)
-                    new_avg = (new_total / new_qty).quantize(DEC_PLACES)
-                else:
-                    new_avg = Decimal('0')
+                new_avg = ((prev_qty * prev_avg) + amount).quantize(DEC_PLACES) / new_qty if new_qty > 0 else Decimal('0')
 
                 if holding:
                     holding.quantity = new_qty
                     holding.avg_price = new_avg
-                    holding.save(update_fields=['quantity','avg_price'])
+                    holding.save(update_fields=['quantity', 'avg_price'])
                 else:
                     holding = Holding.objects.create(user=user, symbol=symbol, quantity=new_qty, avg_price=new_avg)
 
                 order.status = 'executed'
                 order.executed_at = timezone.now()
                 order.note = 'Buy executed'
-                order.save(update_fields=['status','executed_at','note'])
+                order.save(update_fields=['status', 'executed_at', 'note'])
+                profit_loss = Decimal('0.00')
 
-                profit_loss = Decimal('0.00')  # buys don't realize P/L
-
-            # SELL path
+            # ---- SELL PATH ----
             else:
-                # ensure user has enough holdings
                 if not holding or holding.quantity < quantity:
                     order.status = 'failed'
                     order.note = 'Insufficient holdings'
-                    order.save(update_fields=['status','note'])
+                    order.save(update_fields=['status', 'note'])
                     OutboxMessage.objects.create(
                         message_type='order_failed',
                         payload={'order_id': str(order.id), 'reason': order.note},
@@ -108,17 +104,13 @@ class CreateOrderView(generics.CreateAPIView):
                     )
                     return Response({'error': order.note}, status=status.HTTP_400_BAD_REQUEST)
 
-                # Reduce holding quantity
                 new_qty = (holding.quantity - quantity).quantize(DEC_PLACES)
-                # compute profit/loss using avg_price BEFORE reduction
                 cost_price = holding.avg_price
                 profit_loss = ((price - cost_price) * quantity).quantize(DEC_PLACES)
 
                 holding.quantity = new_qty
-                # keep avg_price unchanged (average of remaining holdings)
                 holding.save(update_fields=['quantity'])
 
-                # Credit wallet
                 wallet.balance = (wallet.balance + amount).quantize(DEC_PLACES)
                 wallet.save(update_fields=['balance'])
 
@@ -126,7 +118,21 @@ class CreateOrderView(generics.CreateAPIView):
                 order.executed_at = timezone.now()
                 order.note = 'Sell executed'
                 order.profit_loss = profit_loss
-                order.save(update_fields=['status','executed_at','note','profit_loss'])
+                order.save(update_fields=['status', 'executed_at', 'note', 'profit_loss'])
+
+            # ---- Payloads ----
+            order_payload = {
+                'order_id': str(order.id),
+                'firebase_uid': getattr(user, 'firebase_uid', None) or str(user.id),
+                'symbol': symbol,
+                'side': side,
+                'quantity': float(quantity),
+                'price': float(price),
+                'amount': float(amount),
+                'status': order.status,
+                'executed_at': order.executed_at.isoformat() if order.executed_at else None,
+                'profit_loss': float(profit_loss)
+            }
 
             wallet_payload = {
                 'user_id': str(user.id),
@@ -142,6 +148,7 @@ class CreateOrderView(generics.CreateAPIView):
                 'avg_price': float(holding.avg_price),
             }
 
+            # ---- Outbox Messages ----
             OutboxMessage.objects.create(
                 message_type='order_created',
                 payload=order_payload,
@@ -163,13 +170,10 @@ class CreateOrderView(generics.CreateAPIView):
                 unique_key=f'holding:{user.id}:{symbol}:{holding.quantity}'
             )
 
-        # end transaction - DB authoritative now
         return Response({
             'order_id': str(order.id),
             'status': order.status,
             'note': order.note,
             'executed_at': order.executed_at,
-            'profit_loss': float(order.profit_loss)
+            'profit_loss': float(profit_loss)
         }, status=status.HTTP_201_CREATED if order.status == 'executed' else status.HTTP_400_BAD_REQUEST)
-
-

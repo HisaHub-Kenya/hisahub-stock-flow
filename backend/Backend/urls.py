@@ -4,16 +4,12 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from stocks.views import StockDetailView
 from django.http import JsonResponse
-<<<<<<< HEAD
 
-=======
-from .view import WalletView, ProcessMockOrder, OrderHistoryView
->>>>>>> 2751577b7996108371b37001b63929183c549447
 def root_view(request):
     return JsonResponse({"message": "Welcome to the HisaHub API"})
 
 schema_view = get_schema_view(
-    openapi.Info(title="Stock API", default_version='v1',description="API for managing stocks and trades"),
+    openapi.Info(title="Stock API", default_version='v1'),
     public=True,
 )
 
@@ -22,13 +18,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
     path('api/stocks/', include('stocks.urls')),
-<<<<<<< HEAD
     path('api/payments/', include('payments.urls')),
-=======
-    path("api/payments/", include('payments.urls')),
-    path("mock-order/", ProcessMockOrder.as_view(), name="mock-order"),
-    path("wallet/", WalletView.as_view(), name="wallet"),
-    path('api/orders/', include('orders.urls')),
->>>>>>> 2751577b7996108371b37001b63929183c549447
+    path('api/trading/', include('trading.urls')),
+    path('api/news/', include('news.urls')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]

@@ -7,14 +7,12 @@ from rest_framework.parsers import MultiPartParser
 from firebase_admin import auth
 
 from .models import FirebaseUser, UserProfile, BrokerProfile
-from .serializers import SignUpSerializer
-from django.core.mail import send_mail
-from accounts.permissions import IsBroker
+from .serializers import SignUpSerializer,KYCSerializer, KYCApprovalSerializer
+from django.db import IntegrityError
 from rest_framework.permissions import IsAuthenticated
-from.serializers import PortfolioSummarySerializer
-from .utils import get_chart_data
-
-
+from .models import BrokerVerification
+from .serializers import BrokerVerificationSerializer
+from rest_framework import permissions, generics, status
 #  User SignUp View
 class SignUpView(APIView):
     def post(self, request):
@@ -98,6 +96,8 @@ class LoginView(APIView):
 
 #  Get Currently Authenticated User
 class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
+    
     def get(self, request):
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         id_token = auth_header.split('Bearer ')[-1] if 'Bearer ' in auth_header else None
@@ -122,65 +122,63 @@ class CurrentUserView(APIView):
                 'error': 'Invalid token or user not authenticated',
                 'details': str(e)
             }, status=status.HTTP_401_UNAUTHORIZED)
+            
+            
 
+class IsAdminUser(permissions.BasePermission):
+    """
+    Custom permission to only allow admins to verify brokers.
+    """
+    def has_permission(self, request, view):
+        return request.user and request.user.is_staff         
+class VerifyingBrokerView(generics.UpdateAPIView):
+    queryset = BrokerVerification.objects.all()
+    serializer_class = BrokerVerificationSerializer
+    permission_classes = [IsAdminUser]
 
-#  Upload KYC Document (for both user and broker)
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.is_verified = True
+        instance.verified_at = now()
+        instance.verified_by = request.user  # request.user is FirebaseUser now
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+            
+
 class UploadKYCView(APIView):
-    parser_classes = [MultiPartParser]
+    permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        uid = request.data.get('uid')
-        kyc_doc = request.data.get('kyc_document')
-        role = request.data.get('role')
+    def post(self, request, *args, **kwargs):
+        serializer = KYCSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                user_profile = UserProfile.objects.get(uid=request.user.uid)
+            except UserProfile.DoesNotExist:
+                return Response({"error": "User profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if not uid or not kyc_doc or not role:
-            return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
+            kyc = serializer.save(user=user_profile)
+            return Response(KYCSerializer(kyc).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+class ApproveKYCView(APIView): 
 
+    def post(self, request, uid):
+        action = request.data.get("action")  # "approve" or "reject"
         try:
-            if role == 'user':
-                profile = UserProfile.objects.get(uid=uid)
-            elif role == 'broker':
-                profile = BrokerProfile.objects.get(uid=uid)
+            user_profile = UserProfile.objects.get(uid=uid)
+            
+            if action == "approve":
+                user_profile.kyc_status = "approved"
+            elif action == "reject":
+                user_profile.kyc_status = "rejected"
             else:
-                return Response({'error': 'Invalid role'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
 
-            profile.kyc_document = kyc_doc
-            profile.kyc_verified = False  # Manual review pending
-            profile.save()
+            user_profile.save()
+            return Response(KYCApprovalSerializer(user_profile).data, status=status.HTTP_200_OK)
 
-            return Response({'message': 'KYC document uploaded successfully'}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-#  Admin Verifies Broker
-class BrokerOnlyView(APIView):
-    permission_classes = [IsAuthenticated, IsBroker]
-
-    def get(self, request):
-        user = request.user
-        return Response({'message': 'hello broker ',"id": user.id}, status=status.HTTP_200_OK)   
-    
-    
-#  Portfolio Summary View
-class PortfolioView(APIView):
-    def get(self, request):
-        user = request.user
-        
-        # Get  date range from query params
-        start_date = request.query_params.get("start_date")
-        end_date = request.query_params.get("end_date")
-        
-        summary = PortfolioSummarySerializer(user, context={
-            "start_date": start_date,
-            "end_date": end_date
-        }).data
-        
-        return Response({
-            "summary": summary,
-            "charts": {
-                "by_market_type": get_chart_data(user, "market_type", start_date, end_date),
-                "by_exchange": get_chart_data(user, "exchange", start_date, end_date),
-                "by_sector": get_chart_data(user, "sector", start_date, end_date),
-            }
-        })
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+CurrentUserView= CurrentUserView.as_view()

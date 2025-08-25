@@ -36,8 +36,11 @@ INSTALLED_APPS = [
     'accounts',
     'stocks',
     'payments',
-    'channels',
+    'news',
+    'trading',
 ]
+# Celery configuration
+
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Ensure Redis is running
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
@@ -49,10 +52,10 @@ import firebase_config    # Initialize Firebase
 # REST framework configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'accounts.authentication.FirebaseAuthentication',
+        'accounts.auth_middleware.FirebaseAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.authentication.SessionAuthentication',
     ],
     
 }
@@ -107,6 +110,11 @@ DATABASES = {
     }
 }
 
+# Default auto field
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+ 
+
+
 # Password validators
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -136,7 +144,6 @@ PAYPAL_SECRET = 'your-paypal-secret'
 PAYPAL_RETURN_URL = 'https://yourdomain.com/paypal/return/'
 PAYPAL_CANCEL_URL = 'https://yourdomain.com/paypal/cancel/'
 
-
  # coinbase configurations
 COINBASE_API_BASE_URL = 'https://api.coinbase.com/v2/'
 COINBASE_API_KEY = os.getenv('COINBASE_API_KEY')
@@ -165,16 +172,6 @@ REDIS_URL = 'redis://127.0.0.1:6379/2'
 # Hosts
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'yourdomain.com']
 
-# mail set up 
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_HOST_USER = 'apikey'  # use the literal 'apikey'
-EMAIL_HOST_PASSWORD = 'your_sendgrid_api_key'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = 'Hisanubkenya@outlook.com'
-
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
@@ -187,3 +184,13 @@ STATIC_URL = 'static/'
 
 # Default auto field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
+sentry_sdk.init(
+    dsn=config('SENTRY_DSN', default=''),
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=1.0,
+    send_default_pii=True,
+)

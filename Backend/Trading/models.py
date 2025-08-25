@@ -6,6 +6,15 @@ from decimal import Decimal
 
 User = settings.AUTH_USER_MODEL
 
+class Trade(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    market_type = models.CharField(max_length=50)   # , "Stocks", "Forex", "Crypto"
+    exchange = models.CharField(max_length=50)      #  "NSE", "NYSE", "Binance"
+    sector = models.CharField(max_length=50)        #  "Technology", "Energy"
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
 class Wallet(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='wallet')
     balance = models.DecimalField(max_digits=28, decimal_places=2, default=Decimal('0.00'))

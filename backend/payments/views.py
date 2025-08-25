@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
 
-from backend.payments.stripe import transfer_to_card
+from .stripe import transfer_to_card
+
 
 from .models import Transaction
 from .stripe import create_card_payment
