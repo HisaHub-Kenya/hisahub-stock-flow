@@ -39,11 +39,6 @@ class Holding(models.Model):
     def __str__(self):
         return f"{self.user} - {self.symbol} : {self.quantity} @ {self.avg_price}"
 
-
-class Wallet(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='wallet')
-    balance = models.DecimalField(max_digits=20, decimal_places=2, default=0)
-
 class Order(models.Model):
     STATUS = (('pending','Pending'), ('executed','Executed'), ('failed','Failed'), ('cancelled','Cancelled'))
     SIDE = (('buy','Buy'), ('sell','Sell'))

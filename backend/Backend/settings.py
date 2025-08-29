@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'payments',
     'news',
     'trading',
+    'chat_App',
 ]
 # Celery configuration
 
@@ -95,8 +96,8 @@ TEMPLATES = [
     },
 ]
 
-# WSGI
-WSGI_APPLICATION = 'Backend.wsgi.application'
+# aSGI
+ASGI_APPLICATION = 'Backend.wsgi.application'
 
 # Database configuration (PostgreSQL)
 DATABASES = {
