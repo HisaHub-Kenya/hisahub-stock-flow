@@ -1,55 +1,67 @@
+import { useState } from "react";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { useToast } from "@/hooks/use-toast";
 
-import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
 
 export const useAIChat = (userId: string | null) => {
-  const [messages, setMessages] = useState<Array<{role: string, content: string}>>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const sendMessage = async (message: string) => {
-    if (!userId || !message.trim()) return;
+    if (!userId || !message.trim() || loading) return;
 
     setLoading(true);
-    
-    // Add user message to UI immediately
-    const userMessage = { role: 'user', content: message };
-    setMessages(prev => [...prev, userMessage]);
+
+    // Optimistically add user message
+    const userMessage: ChatMessage = { role: "user", content: message };
+    setMessages((prev) => [...prev, userMessage]);
 
     try {
-      const response = await supabase.functions.invoke('ai-assistant', {
-        body: {
-          message,
-          user_id: userId,
-          session_id: sessionId
-        }
+      const functions = getFunctions();
+      const aiAssistant = httpsCallable(functions, "aiAssistant"); // <-- Firebase Function name
+
+      const result = await aiAssistant({
+        message,
+        user_id: userId,
+        session_id: sessionId,
       });
 
-      if (response.error) throw response.error;
+      const data = result.data as {
+        response?: string;
+        session_id?: string;
+      };
 
-      const { response: aiResponse, session_id: newSessionId } = response.data;
-      
-      // Update session ID if it's new
-      if (newSessionId && !sessionId) {
-        setSessionId(newSessionId);
+      if (!data?.response) {
+        throw new Error("AI did not return a valid response.");
       }
 
-      // Add AI response to UI
-      const aiMessage = { role: 'assistant', content: aiResponse };
-      setMessages(prev => [...prev, aiMessage]);
+      if (data.session_id && data.session_id !== sessionId) {
+        setSessionId(data.session_id);
+      }
 
-    } catch (error) {
-      console.error('AI Chat error:', error);
+      // Add AI response
+      const aiMessage: ChatMessage = {
+        role: "assistant",
+        content: data.response,
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (err) {
+      console.error("AI Chat error:", err);
+
       toast({
         title: "Chat Error",
         description: "Failed to get AI response. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
-      
-      // Remove the user message since it failed
-      setMessages(prev => prev.slice(0, -1));
+
+      // Rollback user message
+      setMessages((prev) => prev.slice(0, -1));
     } finally {
       setLoading(false);
     }
@@ -64,6 +76,7 @@ export const useAIChat = (userId: string | null) => {
     messages,
     loading,
     sendMessage,
-    clearChat
+    clearChat,
+    hasMessages: messages.length > 0,
   };
 };

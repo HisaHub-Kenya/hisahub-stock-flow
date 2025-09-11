@@ -1,237 +1,123 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { getAuth } from "firebase/auth";
+import { toast } from "sonner";
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import type { Database } from '@/integrations/supabase/types';
-
-type Post = Database['public']['Tables']['posts']['Row'] & {
-  profiles: {
-    first_name: string | null;
-    last_name: string | null;
-  } | null;
-  is_liked: boolean;
-};
-
-type UserProfile = Database['public']['Tables']['profiles']['Row'];
+const API_URL = import.meta.env.VITE_API_URL;
 
 export const useCommunity = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [followedUsers, setFollowedUsers] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const getToken = async () => {
+    const user = getAuth().currentUser;
+    if (!user) return null;
+    return await user.getIdToken();
+  };
 
   const fetchPosts = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      setLoading(true);
+      const token = await getToken();
+      if (!token) return;
 
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles!posts_user_id_fkey (
-            first_name,
-            last_name
-          ),
-          post_likes!left (
-            user_id
-          )
-        `)
-        .order('created_at', { ascending: false });
+      const res = await axios.get(`${API_URL}/posts/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      if (error) throw error;
-
-      const postsWithLikes = data?.map(post => ({
-        ...post,
-        is_liked: post.post_likes?.some(like => like.user_id === user.id) || false
-      })) || [];
-
-      setPosts(postsWithLikes);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-      toast.error('Failed to load posts');
+      setPosts(res.data);
+    } catch (err) {
+      console.error("Error fetching posts:", err);
+      toast.error("Failed to load posts");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchUsers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .neq('id', (await supabase.auth.getUser()).data.user?.id);
-
-      if (error) throw error;
-      setUsers(data || []);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
-
-  const fetchFollowedUsers = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('user_follows')
-        .select('following_id')
-        .eq('follower_id', user.id);
-
-      if (error) throw error;
-      setFollowedUsers(data?.map(follow => follow.following_id) || []);
-    } catch (error) {
-      console.error('Error fetching followed users:', error);
-    }
-  };
-
-  const followUser = async (userId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-
-      const { error } = await supabase
-        .from('user_follows')
-        .insert({ follower_id: user.id, following_id: userId });
-
-      if (error) throw error;
-
-      setFollowedUsers(prev => [...prev, userId]);
-      toast.success('User followed successfully');
-      return true;
-    } catch (error) {
-      console.error('Error following user:', error);
-      toast.error('Failed to follow user');
-      return false;
-    }
-  };
-
-  const unfollowUser = async (userId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-
-      const { error } = await supabase
-        .from('user_follows')
-        .delete()
-        .eq('follower_id', user.id)
-        .eq('following_id', userId);
-
-      if (error) throw error;
-
-      setFollowedUsers(prev => prev.filter(id => id !== userId));
-      toast.success('User unfollowed successfully');
-      return true;
-    } catch (error) {
-      console.error('Error unfollowing user:', error);
-      toast.error('Failed to unfollow user');
-      return false;
-    }
-  };
-
   const createPost = async (content: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
+      const token = await getToken();
+      if (!token) return false;
 
-      const { error } = await supabase
-        .from('posts')
-        .insert({ user_id: user.id, content });
+      await axios.post(
+        `${API_URL}/posts/`,
+        { content },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-      if (error) throw error;
-
-      toast.success('Post created successfully');
-      await fetchPosts(); // Refresh posts
+      toast.success("Post created successfully");
+      fetchPosts();
       return true;
-    } catch (error) {
-      console.error('Error creating post:', error);
-      toast.error('Failed to create post');
+    } catch (err) {
+      console.error("Error creating post:", err);
+      toast.error("Failed to create post");
       return false;
     }
   };
 
   const toggleLike = async (postId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const token = await getToken();
+      if (!token) return;
 
-      const post = posts.find(p => p.id === postId);
-      if (!post) return;
+      const res = await axios.post(
+        `${API_URL}/posts/${postId}/like/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-      if (post.is_liked) {
-        // Unlike
-        const { error } = await supabase
-          .from('post_likes')
-          .delete()
-          .eq('post_id', postId)
-          .eq('user_id', user.id);
-
-        if (error) throw error;
-      } else {
-        // Like
-        const { error } = await supabase
-          .from('post_likes')
-          .insert({ post_id: postId, user_id: user.id });
-
-        if (error) throw error;
-      }
-
-      // Update local state
-      setPosts(prev => prev.map(p => 
-        p.id === postId 
-          ? { 
-              ...p, 
-              is_liked: !p.is_liked,
-              likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1
-            }
-          : p
-      ));
-
-    } catch (error) {
-      console.error('Error toggling like:', error);
-      toast.error('Failed to update like');
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId ? { ...p, ...res.data } : p
+        )
+      );
+    } catch (err) {
+      console.error("Error toggling like:", err);
+      toast.error("Failed to update like");
     }
   };
 
-  const getUserPosts = async (userId: string) => {
+  const followUser = async (userId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      const token = await getToken();
+      if (!token) return;
 
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles!posts_user_id_fkey (
-            first_name,
-            last_name
-          ),
-          post_likes!left (
-            user_id
-          )
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+      await axios.post(
+        `${API_URL}/users/${userId}/follow/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-      if (error) throw error;
+      setFollowedUsers((prev) => [...prev, userId]);
+      toast.success("User followed successfully");
+    } catch (err) {
+      console.error("Error following user:", err);
+      toast.error("Failed to follow user");
+    }
+  };
 
-      const postsWithLikes = data?.map(post => ({
-        ...post,
-        is_liked: post.post_likes?.some(like => like.user_id === user.id) || false
-      })) || [];
+  const unfollowUser = async (userId: string) => {
+    try {
+      const token = await getToken();
+      if (!token) return;
 
-      return postsWithLikes;
-    } catch (error) {
-      console.error('Error fetching user posts:', error);
-      return [];
+      await axios.delete(`${API_URL}/users/${userId}/unfollow/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setFollowedUsers((prev) => prev.filter((id) => id !== userId));
+      toast.success("User unfollowed successfully");
+    } catch (err) {
+      console.error("Error unfollowing user:", err);
+      toast.error("Failed to unfollow user");
     }
   };
 
   useEffect(() => {
     fetchPosts();
-    fetchUsers();
-    fetchFollowedUsers();
+    // TODO: fetch users & followed users from backend
   }, []);
 
   return {
@@ -239,11 +125,10 @@ export const useCommunity = () => {
     users,
     followedUsers,
     loading,
-    followUser,
-    unfollowUser,
     createPost,
     toggleLike,
-    getUserPosts,
-    refetch: fetchPosts
+    followUser,
+    unfollowUser,
+    refetch: fetchPosts,
   };
 };
