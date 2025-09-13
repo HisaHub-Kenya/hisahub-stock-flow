@@ -98,6 +98,7 @@ class AuthManager {
       body: JSON.stringify({ 
         email, 
         password, 
+        password_confirm: password,
         first_name, 
         last_name 
       }),

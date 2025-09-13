@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { User } from "@/lib/auth";
+import { User, getCurrentUser } from "@/lib/auth";
 import Index from "./pages/Index";
 import Trade from "./pages/Trade";
 import Portfolio from "./pages/Portfolio";

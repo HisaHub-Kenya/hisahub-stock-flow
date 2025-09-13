@@ -48,10 +48,10 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/nkekijcefghncihokotz\.supabase\.co\/.*/i,
+            urlPattern: /^http:\/\/127\.0\.0\.1:8000\/api\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'supabase-cache',
+              cacheName: 'django-api-cache',
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
