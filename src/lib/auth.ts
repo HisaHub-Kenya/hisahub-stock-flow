@@ -87,12 +87,22 @@ class AuthManager {
     const isProduction = import.meta.env.PROD;
     const apiUrl = import.meta.env.VITE_API_URL;
     
-    if (isProduction && (!apiUrl || apiUrl.includes('localhost'))) {
+    // Use mock authentication if:
+    // 1. In production and no API URL set
+    // 2. API URL points to localhost (not accessible from mobile)
+    // 3. On mobile devices (better UX with mock auth)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isProduction && (!apiUrl || apiUrl.includes('localhost') || isMobile)) {
       // Use mock authentication for demo purposes
       return this.mockLogin(sanitizedEmail, sanitizedPassword);
     }
     
     try {
+      // Add timeout and better error handling for mobile
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
       const response = await fetch(`${apiUrl}/auth/login/`, {
         method: 'POST',
         headers: {
@@ -102,7 +112,10 @@ class AuthManager {
           email: sanitizedEmail, 
           password: sanitizedPassword 
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -165,12 +178,22 @@ class AuthManager {
     const isProduction = import.meta.env.PROD;
     const apiUrl = import.meta.env.VITE_API_URL;
     
-    if (isProduction && (!apiUrl || apiUrl.includes('localhost'))) {
+    // Use mock registration if:
+    // 1. In production and no API URL set
+    // 2. API URL points to localhost (not accessible from mobile)
+    // 3. On mobile devices (better UX with mock auth)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isProduction && (!apiUrl || apiUrl.includes('localhost') || isMobile)) {
       // Use mock registration for demo purposes
       return this.mockRegister(sanitizedEmail, sanitizedPassword, sanitizedFirstName, sanitizedLastName);
     }
     
     try {
+      // Add timeout and better error handling for mobile
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
       const response = await fetch(`${apiUrl}/auth/register/`, {
         method: 'POST',
         headers: {
@@ -183,7 +206,10 @@ class AuthManager {
           first_name: sanitizedFirstName, 
           last_name: sanitizedLastName 
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json();

@@ -42,7 +42,12 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       onLogin();
       navigate('/'); // Redirect to home page
     } catch (error: any) {
-      toast.error(error.message || "An unexpected error occurred during login.");
+      console.error('Login error:', error);
+      if (error.message?.includes('fetch')) {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error(error.message || "An unexpected error occurred during login.");
+      }
     } finally {
       setLoading(false);
     }
@@ -79,8 +84,11 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       onLogin();
       navigate('/'); // Redirect to home page
     } catch (error: any) {
+      console.error('Signup error:', error);
       if (error.message?.includes("already exists")) {
         toast.error("An account with this email already exists. Please try logging in instead.");
+      } else if (error.message?.includes('fetch')) {
+        toast.error("Network error. Please check your connection and try again.");
       } else {
         toast.error(error.message || "An unexpected error occurred during signup.");
       }
