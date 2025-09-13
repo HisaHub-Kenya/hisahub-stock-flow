@@ -1,4 +1,6 @@
 // Django JWT Authentication utilities
+import { sanitizeString, validateEmail, validatePassword, isTokenExpired } from './security';
+
 export interface User {
   id: string;
   email: string;
@@ -69,12 +71,27 @@ class AuthManager {
   }
 
   async login(email: string, password: string): Promise<LoginResponse> {
+    // Sanitize and validate inputs
+    const sanitizedEmail = sanitizeString(email);
+    const sanitizedPassword = sanitizeString(password);
+    
+    if (!validateEmail(sanitizedEmail)) {
+      throw new Error('Invalid email format');
+    }
+    
+    if (sanitizedPassword.length === 0) {
+      throw new Error('Password is required');
+    }
+    
     const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ 
+        email: sanitizedEmail, 
+        password: sanitizedPassword 
+      }),
     });
 
     if (!response.ok) {
@@ -90,17 +107,32 @@ class AuthManager {
   }
 
   async register(email: string, password: string, first_name?: string, last_name?: string): Promise<LoginResponse> {
+    // Sanitize and validate inputs
+    const sanitizedEmail = sanitizeString(email);
+    const sanitizedPassword = sanitizeString(password);
+    const sanitizedFirstName = first_name ? sanitizeString(first_name) : undefined;
+    const sanitizedLastName = last_name ? sanitizeString(last_name) : undefined;
+    
+    if (!validateEmail(sanitizedEmail)) {
+      throw new Error('Invalid email format');
+    }
+    
+    const passwordValidation = validatePassword(sanitizedPassword);
+    if (!passwordValidation.isValid) {
+      throw new Error(passwordValidation.errors[0]);
+    }
+    
     const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/register/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
-        email, 
-        password, 
-        password_confirm: password,
-        first_name, 
-        last_name 
+        email: sanitizedEmail, 
+        password: sanitizedPassword, 
+        password_confirm: sanitizedPassword,
+        first_name: sanitizedFirstName, 
+        last_name: sanitizedLastName 
       }),
     });
 
@@ -186,21 +218,13 @@ class AuthManager {
       return null;
     }
 
-    // Check if token is expired (basic check)
-    try {
-      const payload = JSON.parse(atob(this.accessToken.split('.')[1]));
-      const now = Date.now() / 1000;
-      
-      if (payload.exp < now) {
-        // Token expired, try to refresh
-        return await this.refreshAccessToken();
-      }
-      
-      return this.accessToken;
-    } catch (error) {
-      console.error('Token validation error:', error);
+    // Check if token is expired using secure utility
+    if (isTokenExpired(this.accessToken)) {
+      // Token expired, try to refresh
       return await this.refreshAccessToken();
     }
+    
+    return this.accessToken;
   }
 }
 

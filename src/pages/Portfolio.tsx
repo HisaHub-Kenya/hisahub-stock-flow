@@ -22,21 +22,26 @@ import {
   Pie,
   Cell
 } from "recharts";
-import { useFinancialData } from "../contexts/FinancialDataContext";
+import { useAppStore } from "../stores/useAppStore";
+import { useAutoRefresh } from "../hooks/useAutoRefresh";
 
 const Portfolio: React.FC = () => {
-  const { state } = useFinancialData();
+  const { 
+    portfolioData, 
+    holdings, 
+    transactions, 
+    isLoading,
+    depositFunds,
+    withdrawFunds,
+    logAnalytics 
+  } = useAppStore();
   const [activeSection, setActiveSection] = useState("overview");
   const [sortBy, setSortBy] = useState("value");
   const [filterType, setFilterType] = useState("all");
+  
+  // Auto-refresh data every 10 seconds
+  useAutoRefresh(10000);
 
-  // Use real data from context
-  const portfolioData = state.portfolioData;
-  const holdings = state.holdings;
-  const transactions = state.transactions;
-
-  console.log("Portfolio page holdings:", holdings);
-  console.log("Portfolio data:", portfolioData);
 
   // Mock data for sections not yet implemented with real data
   const allocationData = [
@@ -108,11 +113,26 @@ const Portfolio: React.FC = () => {
       </div>
 
       <div className="flex gap-2">
-        <Button className="flex-1 bg-secondary text-primary hover:bg-secondary/90">
+        <Button 
+          className="flex-1 bg-secondary text-primary hover:bg-secondary/90"
+          onClick={() => {
+            const amount = 1000; // Default amount
+            depositFunds(amount);
+            logAnalytics('add_funds_clicked', { amount });
+          }}
+          disabled={isLoading}
+        >
           <Plus size={16} className="mr-2" />
-          Add Funds
+          {isLoading ? 'Processing...' : 'Add Funds'}
         </Button>
-        <Button variant="outline" className="flex-1 border-secondary/20 text-off-white hover:bg-white/10">
+        <Button 
+          variant="outline" 
+          className="flex-1 border-secondary/20 text-off-white hover:bg-white/10"
+          onClick={() => {
+            logAnalytics('rebalance_clicked');
+            // TODO: Implement rebalance functionality
+          }}
+        >
           Rebalance
         </Button>
       </div>
@@ -143,7 +163,7 @@ const Portfolio: React.FC = () => {
       ) : (
         holdings
           .sort((a, b) => {
-            if (sortBy === "value") return b.value - a.value;
+            if (sortBy === "value") return b.market_value - a.market_value;
             if (sortBy === "profitLoss") return b.profitLoss - a.profitLoss;
             return a.symbol.localeCompare(b.symbol);
           })
@@ -154,15 +174,15 @@ const Portfolio: React.FC = () => {
                 <div className="font-semibold text-off-white text-lg">{holding.symbol}</div>
                 <div className="text-xs text-neutral">{holding.name}</div>
                 <div className="text-xs text-off-white/60 mt-1">
-                  {holding.quantity} shares @ KES {holding.avgPrice}
+                  {holding.quantity} shares @ KES {holding.average_price}
                 </div>
               </div>
               <div className="text-right">
                 <div className="font-bold text-lg text-off-white">
-                  KES {holding.value.toLocaleString()}
+                  KES {holding.market_value.toLocaleString()}
                 </div>
                 <div className="text-sm text-off-white/60">
-                  KES {holding.currentPrice.toFixed(2)}
+                  KES {holding.current_price.toFixed(2)}
                 </div>
               </div>
             </div>
@@ -179,10 +199,26 @@ const Portfolio: React.FC = () => {
               </div>
               
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="text-xs border-secondary/20 text-secondary hover:bg-secondary/10">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="text-xs border-secondary/20 text-secondary hover:bg-secondary/10"
+                  onClick={() => {
+                    logAnalytics('buy_stock_clicked', { symbol: holding.symbol });
+                    // TODO: Navigate to trade page with pre-selected stock
+                  }}
+                >
                   Buy
                 </Button>
-                <Button size="sm" variant="outline" className="text-xs border-red-500/20 text-red-400 hover:bg-red-500/10">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="text-xs border-red-500/20 text-red-400 hover:bg-red-500/10"
+                  onClick={() => {
+                    logAnalytics('sell_stock_clicked', { symbol: holding.symbol });
+                    // TODO: Navigate to trade page with pre-selected stock and sell mode
+                  }}
+                >
                   Sell
                 </Button>
               </div>

@@ -1,73 +1,71 @@
 
-import { useFinancialData } from '../contexts/FinancialDataContext';
-import { useToast } from '@/hooks/use-toast';
+import { useAppStore } from '../stores/useAppStore';
+import { toast } from 'sonner';
 
 export const useTrading = () => {
-  const { state, placeOrder: contextPlaceOrder } = useFinancialData();
-  const { toast } = useToast();
+  const { 
+    user, 
+    stocks, 
+    holdings, 
+    portfolioData, 
+    placeOrder: storePlaceOrder,
+    logAnalytics 
+  } = useAppStore();
 
   const buyStock = async (symbol: string, quantity: number, orderType: 'market' | 'limit' = 'market') => {
-    if (!state.user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to place orders",
-        variant: "destructive"
-      });
+    if (!user) {
+      toast.error("Please log in to place orders");
       return false;
     }
 
-    const stock = state.stocks.find(s => s.symbol === symbol);
+    const stock = stocks.find(s => s.symbol === symbol);
     if (!stock) {
-      toast({
-        title: "Error",
-        description: "Stock not found",
-        variant: "destructive"
-      });
+      toast.error("Stock not found");
       return false;
     }
 
     const total = quantity * stock.price;
-    if (state.accountData.balance < total) {
-      toast({
-        title: "Insufficient Funds",
-        description: `You need KES ${total.toLocaleString()} but only have KES ${state.accountData.balance.toLocaleString()}`,
-        variant: "destructive"
-      });
+    if (portfolioData.cashBalance < total) {
+      toast.error(`Insufficient funds. You need KES ${total.toLocaleString()} but only have KES ${portfolioData.cashBalance.toLocaleString()}`);
       return false;
     }
 
-    return await contextPlaceOrder(symbol, quantity, orderType);
+    logAnalytics('buy_stock_attempted', { symbol, quantity, orderType, total });
+    return await storePlaceOrder({
+      symbol,
+      quantity,
+      order_type: orderType,
+      side: 'buy'
+    });
   };
 
   const sellStock = async (symbol: string, quantity: number, orderType: 'market' | 'limit' = 'market') => {
-    if (!state.user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to place orders",
-        variant: "destructive"
-      });
+    if (!user) {
+      toast.error("Please log in to place orders");
       return false;
     }
 
-    const holding = state.holdings.find(h => h.stocks?.symbol === symbol);
+    const holding = holdings.find(h => h.symbol === symbol);
     if (!holding || holding.quantity < quantity) {
-      toast({
-        title: "Insufficient Shares",
-        description: `You only have ${holding?.quantity || 0} shares of ${symbol}`,
-        variant: "destructive"
-      });
+      toast.error(`Insufficient shares. You only have ${holding?.quantity || 0} shares of ${symbol}`);
       return false;
     }
 
-    return await contextPlaceOrder(symbol, -quantity, orderType);
+    logAnalytics('sell_stock_attempted', { symbol, quantity, orderType });
+    return await storePlaceOrder({
+      symbol,
+      quantity,
+      order_type: orderType,
+      side: 'sell'
+    });
   };
 
   return {
     buyStock,
     sellStock,
-    accountBalance: state.accountData.balance,
-    holdings: state.holdings,
-    totalValue: state.accountData.totalValue,
-    totalPnL: state.accountData.totalPnL
+    accountBalance: portfolioData.cashBalance,
+    holdings: holdings,
+    totalValue: portfolioData.totalValue,
+    totalPnL: portfolioData.totalPnL
   };
 };

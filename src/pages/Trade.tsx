@@ -21,12 +21,23 @@ import AlertsPanel from "../components/trading/AlertsPanel";
 import NewsFeed from "../components/trading/NewsFeed";
 import WatchlistPanel from "../components/trading/WatchlistPanel";
 import ResearchPanel from "../components/trading/ResearchPanel";
-import { useFinancialData, Stock } from "../contexts/FinancialDataContext";
+import { useAppStore, Stock } from "../stores/useAppStore";
+import { useAutoRefresh } from "../hooks/useAutoRefresh";
 
 const Trade: React.FC = () => {
   const navigate = useNavigate();
-  const { state } = useFinancialData();
-  const [selectedStock, setSelectedStock] = useState<Stock>(state.stocks[0] || {
+  const { 
+    stocks, 
+    selectedStock, 
+    setSelectedStock, 
+    placeOrder, 
+    logAnalytics,
+    isLoading 
+  } = useAppStore();
+  
+  // Auto-refresh data every 5 seconds for trading page
+  useAutoRefresh(5000);
+  const [currentStock, setCurrentStock] = useState<Stock>(selectedStock || stocks[0] || {
     id: '',
     symbol: 'SCOM',
     name: 'Safaricom PLC',
@@ -40,25 +51,28 @@ const Trade: React.FC = () => {
   });
 
   const handleStockChange = (stockSymbol: string) => {
-    const stock = state.stocks.find(s => s.symbol === stockSymbol);
+    const stock = stocks.find(s => s.symbol === stockSymbol);
     if (stock) {
+      setCurrentStock(stock);
       setSelectedStock(stock);
+      logAnalytics('stock_selected', { symbol: stock.symbol });
     }
   };
 
   const handleBrokerLogin = () => {
+    logAnalytics('broker_login_clicked');
     navigate("/broker-integration");
   };
 
   // Update selected stock when prices change
   React.useEffect(() => {
-    if (state.stocks.length > 0 && selectedStock) {
-      const updatedStock = state.stocks.find(s => s.symbol === selectedStock.symbol);
+    if (stocks.length > 0 && currentStock) {
+      const updatedStock = stocks.find(s => s.symbol === currentStock.symbol);
       if (updatedStock) {
-        setSelectedStock(updatedStock);
+        setCurrentStock(updatedStock);
       }
     }
-  }, [state.stocks, selectedStock]);
+  }, [stocks, currentStock]);
 
   return (
     <div className="min-h-screen flex flex-col bg-primary font-sans transition-colors">
@@ -69,25 +83,25 @@ const Trade: React.FC = () => {
         <div className="mb-4 flex flex-col sm:flex-row gap-4">
           {/* Stock Selector */}
           <div className="flex-1">
-            <Select value={selectedStock.symbol} onValueChange={handleStockChange}>
+            <Select value={currentStock.symbol} onValueChange={handleStockChange}>
               <SelectTrigger className="w-full bg-white/10 border-secondary/20 text-off-white">
                 <SelectValue>
                   <div className="flex items-center justify-between w-full">
                     <div className="flex flex-col items-start">
-                      <span className="font-semibold">{selectedStock.symbol}</span>
-                      <span className="text-xs text-off-white/60">{selectedStock.name}</span>
+                      <span className="font-semibold">{currentStock.symbol}</span>
+                      <span className="text-xs text-off-white/60">{currentStock.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono">KES {selectedStock.price.toFixed(2)}</span>
-                      <span className={`text-xs ${selectedStock.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {selectedStock.change >= 0 ? '+' : ''}{selectedStock.change.toFixed(2)}%
+                      <span className="font-mono">KES {currentStock.price.toFixed(2)}</span>
+                      <span className={`text-xs ${currentStock.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {currentStock.change >= 0 ? '+' : ''}{currentStock.change.toFixed(2)}%
                       </span>
                     </div>
                   </div>
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-primary border-secondary/20">
-                {state.stocks.map((stock) => (
+                {stocks.map((stock) => (
                   <SelectItem key={stock.symbol} value={stock.symbol} className="text-off-white focus:bg-white/10">
                     <div className="flex items-center justify-between w-full">
                       <div className="flex flex-col items-start">
@@ -124,13 +138,13 @@ const Trade: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 flex-1">
           {/* Left Column - Chart and Stock Info */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            <StockSummary stock={selectedStock} />
-            <TradingChart symbol={selectedStock.symbol} />
+            <StockSummary stock={currentStock} />
+            <TradingChart symbol={currentStock.symbol} />
           </div>
 
           {/* Right Column - Trading Panel */}
           <div className="space-y-4 sm:space-y-6">
-            <OrderPanel stock={selectedStock} />
+            <OrderPanel stock={currentStock} />
             
             {/* Mobile Tabs for additional content */}
             <div className="lg:hidden">
@@ -149,13 +163,13 @@ const Trade: React.FC = () => {
                   <WatchlistPanel />
                 </TabsContent>
                 <TabsContent value="research" className="mt-4">
-                  <ResearchPanel stock={selectedStock} />
+                  <ResearchPanel stock={currentStock} />
                 </TabsContent>
                 <TabsContent value="alerts" className="mt-4">
-                  <AlertsPanel stock={selectedStock} />
+                  <AlertsPanel stock={currentStock} />
                 </TabsContent>
                 <TabsContent value="news" className="mt-4">
-                  <NewsFeed stock={selectedStock} />
+                  <NewsFeed stock={currentStock} />
                 </TabsContent>
               </Tabs>
             </div>
@@ -164,9 +178,9 @@ const Trade: React.FC = () => {
             <div className="hidden lg:block space-y-6">
               <PositionsOrders />
               <WatchlistPanel />
-              <ResearchPanel stock={selectedStock} />
-              <AlertsPanel stock={selectedStock} />
-              <NewsFeed stock={selectedStock} />
+              <ResearchPanel stock={currentStock} />
+              <AlertsPanel stock={currentStock} />
+              <NewsFeed stock={currentStock} />
             </div>
           </div>
         </div>

@@ -7,8 +7,19 @@ import AccountSummaryCard from "../components/home/AccountSummaryCard";
 import OpenPositionsCard from "../components/home/OpenPositionsCard";
 import MarketOverviewSection from "../components/home/MarketOverviewSection";
 import { Link } from "react-router-dom";
+import { useAppStore } from "../stores/useAppStore";
+import { useAutoRefresh } from "../hooks/useAutoRefresh";
 
 const Index: React.FC = () => {
+  const { logAnalytics } = useAppStore();
+  
+  // Auto-refresh data every 10 seconds
+  useAutoRefresh(10000);
+
+  const handleStartTradingClick = () => {
+    logAnalytics('start_trading_clicked');
+  };
+
   return (
     <div className="min-h-screen flex flex-col justify-between bg-primary font-sans pb-20">
       <HisaAIButton />
@@ -25,6 +36,7 @@ const Index: React.FC = () => {
             </div>
             <Link
               to="/trade"
+              onClick={handleStartTradingClick}
               className="w-full max-w-xs block bg-secondary text-primary font-bold px-8 py-3 rounded-xl shadow hover:scale-105 hover:shadow-lg transition text-lg"
             >
               Start Trading

@@ -3,20 +3,36 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { User, getCurrentUser } from "@/lib/auth";
+import { useState, useEffect, Suspense, lazy } from "react";
+import { getCurrentUser } from "@/lib/auth";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Critical routes loaded immediately
 import Index from "./pages/Index";
-import Trade from "./pages/Trade";
-import Portfolio from "./pages/Portfolio";
-import News from "./pages/News";
-import Community from "./pages/Community";
-import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
-import BrokerIntegration from "./pages/BrokerIntegration";
-import Chatbot from "./pages/Chatbot";
-import NotFound from "./pages/NotFound";
+
+// Non-critical routes loaded lazily
+const Trade = lazy(() => import("./pages/Trade"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const News = lazy(() => import("./pages/News"));
+const Community = lazy(() => import("./pages/Community"));
+const Settings = lazy(() => import("./pages/Settings"));
+const BrokerIntegration = lazy(() => import("./pages/BrokerIntegration"));
+const Chatbot = lazy(() => import("./pages/Chatbot"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+// Loading component
+const PageLoader = () => (
+  <div className="min-h-screen bg-primary flex items-center justify-center">
+    <div className="space-y-4 w-full max-w-md">
+      <Skeleton className="h-12 w-full bg-white/10" />
+      <Skeleton className="h-32 w-full bg-white/10" />
+      <Skeleton className="h-8 w-3/4 bg-white/10" />
+    </div>
+  </div>
+);
 import { ThemeProvider } from "./components/ThemeProvider";
-import { FinancialDataProvider } from "./contexts/FinancialDataContext";
+import { useAppStore } from "./stores/useAppStore";
 import SplashScreen from "./components/SplashScreen";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
@@ -24,30 +40,34 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isAuthenticated, setUser, syncAuthState, loadPortfolioData, loadMarketData } = useAppStore();
 
   const handleSplashComplete = () => {
     setShowSplash(false);
   };
 
   const handleLogin = () => {
-    // Check auth state after login
-    const currentUser = getCurrentUser();
-    setUser(currentUser);
+    // Sync auth state after login
+    syncAuthState();
+    if (isAuthenticated) {
+      // Load data after successful login
+      loadPortfolioData();
+      loadMarketData();
+    }
   };
 
   useEffect(() => {
-    // Check for existing session on app load
-    const currentUser = getCurrentUser();
-    setUser(currentUser);
-    setLoading(false);
-  }, []);
+    // Sync auth state on app load
+    syncAuthState();
+    if (isAuthenticated) {
+      // Load data if user is already authenticated
+      loadPortfolioData();
+      loadMarketData();
+    }
+  }, [syncAuthState, loadPortfolioData, loadMarketData, isAuthenticated]);
 
-  if (loading) {
-    return <div className="min-h-screen bg-primary flex items-center justify-center">
-      <div className="text-off-white">Loading...</div>
-    </div>;
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
   return (
@@ -56,36 +76,62 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <BrowserRouter>
-            {showSplash ? (
-              <SplashScreen onComplete={handleSplashComplete} />
-            ) : (
-              <FinancialDataProvider>
-                <Routes>
-                  {/* Auth route - accessible to everyone */}
-                  <Route path="/auth" element={<Auth onLogin={handleLogin} />} />
-                  
-                  {/* Protected routes - only accessible to authenticated users */}
-                  {user ? (
-                    <>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/trade" element={<Trade />} />
-                      <Route path="/portfolio" element={<Portfolio />} />
-                      <Route path="/news" element={<News />} />
-                      <Route path="/community" element={<Community />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/broker-integration" element={<BrokerIntegration />} />
-                      <Route path="/chatbot" element={<Chatbot />} />
-                      <Route path="*" element={<NotFound />} />
-                    </>
-                  ) : (
-                    // Redirect all routes to auth if not authenticated
-                    <Route path="*" element={<Navigate to="/auth" replace />} />
-                  )}
-                </Routes>
-                {/* Show PWA install prompt only when user is authenticated */}
-                {user && <PWAInstallPrompt />}
-              </FinancialDataProvider>
-            )}
+            <Routes>
+              {/* Auth route - accessible to everyone */}
+              <Route path="/auth" element={<Auth onLogin={handleLogin} />} />
+              
+              {/* Protected routes - only accessible to authenticated users */}
+              {isAuthenticated ? (
+                <>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/trade" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Trade />
+                    </Suspense>
+                  } />
+                  <Route path="/portfolio" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Portfolio />
+                    </Suspense>
+                  } />
+                  <Route path="/news" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <News />
+                    </Suspense>
+                  } />
+                  <Route path="/community" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Community />
+                    </Suspense>
+                  } />
+                  <Route path="/settings" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Settings />
+                    </Suspense>
+                  } />
+                  <Route path="/broker-integration" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <BrokerIntegration />
+                    </Suspense>
+                  } />
+                  <Route path="/chatbot" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Chatbot />
+                    </Suspense>
+                  } />
+                  <Route path="*" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <NotFound />
+                    </Suspense>
+                  } />
+                </>
+              ) : (
+                // Redirect all routes to auth if not authenticated
+                <Route path="*" element={<Navigate to="/auth" replace />} />
+              )}
+            </Routes>
+            {/* Show PWA install prompt only when user is authenticated */}
+            {isAuthenticated && <PWAInstallPrompt />}
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>

@@ -36,13 +36,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       return;
     }
 
-    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!isValidEmail) {
-      toast.error("Please enter a valid email address.");
-      setLoading(false);
-      return;
-    }
-
     try {
       await login(email, password);
       toast.success("Login successful!");
@@ -69,24 +62,6 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
     if (password !== confirmPassword) {
       toast.error("Passwords do not match.");
-      setLoading(false);
-      return;
-    }
-
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters long.");
-      setLoading(false);
-      return;
-    }
-
-    // Check for password strength
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
-      toast.error("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
       setLoading(false);
       return;
     }

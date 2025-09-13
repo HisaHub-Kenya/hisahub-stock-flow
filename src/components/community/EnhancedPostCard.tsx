@@ -70,8 +70,7 @@ const EnhancedPostCard: React.FC<EnhancedPostCardProps> = ({ post, onToggleLike 
   };
 
   const handleShare = () => {
-    // Share functionality
-    console.log('Share post:', post.id);
+    // Share functionality would be implemented here
   };
 
   return (

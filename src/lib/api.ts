@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getValidToken } from './auth';
+import { sanitizeString, sanitizeNumber, sanitizeApiResponse, validateStockSymbol } from './security';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
@@ -22,9 +23,15 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Add response interceptor to handle token refresh
+// Add response interceptor to handle token refresh and sanitization
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Sanitize response data
+    if (response.data) {
+      response.data = sanitizeApiResponse(response.data);
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     
@@ -62,9 +69,15 @@ export const API_ENDPOINTS = {
   
   // Broker Integration
   BROKER: {
-    LINK_ACCOUNT: '/broker/link/',
-    SUBMIT_KYC: '/broker/kyc/',
-    GET_LINKED_BROKERS: '/broker/linked/',
+    GET_BROKERS: '/broker/brokers/',
+    LINK_ACCOUNT: '/broker/link-account/',
+    SUBMIT_KYC: '/broker/kyc/submit/',
+    GET_ACCOUNTS: '/broker/accounts/',
+    KYC_STATUS: '/broker/kyc/status/',
+    PLACE_ORDER: '/broker/place-order/',
+    GET_ORDERS: '/broker/orders/',
+    GET_BALANCE: '/broker/accounts/{account_id}/balance/',
+    SYNC_ACCOUNT: '/broker/accounts/{account_id}/sync/',
   },
   
   // Community
@@ -77,8 +90,12 @@ export const API_ENDPOINTS = {
   // Market Data
   MARKET: {
     STOCKS: '/market/stocks/',
+    STOCK_DETAIL: '/market/stocks/{symbol}/',
+    STOCK_PRICES: '/market/stocks/{symbol}/prices/',
     INDICES: '/market/indices/',
-    PRICES: '/market/prices/',
+    NEWS: '/market/news/',
+    STOCK_NEWS: '/market/news/{symbol}/',
+    OVERVIEW: '/market/overview/',
   },
   
   // User Profile
@@ -175,7 +192,7 @@ export const apiHelpers = {
   },
 
   async getLinkedBrokers() {
-    const response = await apiClient.get(API_ENDPOINTS.BROKER.GET_LINKED_BROKERS);
+    const response = await apiClient.get(API_ENDPOINTS.BROKER.GET_ACCOUNTS);
     return response.data;
   },
 
@@ -224,10 +241,34 @@ export const apiHelpers = {
     return response.data;
   },
 
-  async getStockPrices(symbols: string[]) {
-    const response = await apiClient.get(API_ENDPOINTS.MARKET.PRICES, {
-      params: { symbols: symbols.join(',') },
-    });
+  async getStockDetail(symbol: string) {
+    const response = await apiClient.get(
+      API_ENDPOINTS.MARKET.STOCK_DETAIL.replace('{symbol}', symbol)
+    );
+    return response.data;
+  },
+
+  async getStockPrices(symbol: string) {
+    const response = await apiClient.get(
+      API_ENDPOINTS.MARKET.STOCK_PRICES.replace('{symbol}', symbol)
+    );
+    return response.data;
+  },
+
+  async getNews() {
+    const response = await apiClient.get(API_ENDPOINTS.MARKET.NEWS);
+    return response.data;
+  },
+
+  async getStockNews(symbol: string) {
+    const response = await apiClient.get(
+      API_ENDPOINTS.MARKET.STOCK_NEWS.replace('{symbol}', symbol)
+    );
+    return response.data;
+  },
+
+  async getMarketOverview() {
+    const response = await apiClient.get(API_ENDPOINTS.MARKET.OVERVIEW);
     return response.data;
   },
 
@@ -239,6 +280,54 @@ export const apiHelpers = {
 
   async updateProfile(updates: any) {
     const response = await apiClient.patch(API_ENDPOINTS.PROFILE.UPDATE, updates);
+    return response.data;
+  },
+
+  // Broker integration operations
+  async getBrokers() {
+    const response = await apiClient.get(API_ENDPOINTS.BROKER.GET_BROKERS);
+    return response.data;
+  },
+
+  async getBrokerAccounts() {
+    const response = await apiClient.get(API_ENDPOINTS.BROKER.GET_ACCOUNTS);
+    return response.data;
+  },
+
+  async getKycStatus() {
+    const response = await apiClient.get(API_ENDPOINTS.BROKER.KYC_STATUS);
+    return response.data;
+  },
+
+  async placeBrokerOrder(accountId: string, symbol: string, quantity: number, orderType: string, side: string) {
+    const response = await apiClient.post(API_ENDPOINTS.BROKER.PLACE_ORDER, {
+      account_id: accountId,
+      symbol,
+      quantity,
+      order_type: orderType,
+      side,
+    });
+    return response.data;
+  },
+
+  async getBrokerOrders(accountId?: string) {
+    const response = await apiClient.get(API_ENDPOINTS.BROKER.GET_ORDERS, {
+      params: accountId ? { account_id: accountId } : {},
+    });
+    return response.data;
+  },
+
+  async getBrokerBalance(accountId: string) {
+    const response = await apiClient.get(
+      API_ENDPOINTS.BROKER.GET_BALANCE.replace('{account_id}', accountId)
+    );
+    return response.data;
+  },
+
+  async syncBrokerAccount(accountId: string) {
+    const response = await apiClient.post(
+      API_ENDPOINTS.BROKER.SYNC_ACCOUNT.replace('{account_id}', accountId)
+    );
     return response.data;
   },
 };

@@ -1,0 +1,24 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp, TrendingDown, Calendar, DollarSign } from 'lucide-react';
+var SidebarWidgets = function () {
+    // Mock market data - in real app, this would come from market data API
+    var marketMovers = [
+        { symbol: 'KCB', name: 'Kenya Commercial Bank', change: 5.2, price: 45.50 },
+        { symbol: 'EABL', name: 'East African Breweries', change: -2.1, price: 185.00 },
+        { symbol: 'SCOM', name: 'Safaricom', change: 1.8, price: 28.75 },
+        { symbol: 'COOP', name: 'Co-operative Bank', change: -0.5, price: 12.85 },
+    ];
+    var upcomingEvents = [
+        { date: 'Dec 15', event: 'KCB Q4 Earnings', type: 'earnings' },
+        { date: 'Dec 18', event: 'NSE Market Close', type: 'holiday' },
+        { date: 'Dec 20', event: 'EABL Dividend Ex-Date', type: 'dividend' },
+        { date: 'Dec 22', event: 'New IPO Listing', type: 'ipo' },
+    ];
+    return (_jsxs("div", { className: "space-y-6", children: [_jsxs(Card, { className: "bg-card border-border", children: [_jsx(CardHeader, { className: "pb-3", children: _jsxs(CardTitle, { className: "text-lg text-foreground flex items-center gap-2", children: [_jsx(TrendingUp, { className: "w-5 h-5 text-secondary" }), "Market Movers"] }) }), _jsx(CardContent, { className: "space-y-3", children: marketMovers.map(function (stock) { return (_jsxs("div", { className: "flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors", children: [_jsxs("div", { className: "flex-1", children: [_jsxs("div", { className: "flex items-center gap-2", children: [_jsx("span", { className: "font-semibold text-foreground", children: stock.symbol }), stock.change > 0 ? (_jsx(TrendingUp, { className: "w-4 h-4 text-green-500" })) : (_jsx(TrendingDown, { className: "w-4 h-4 text-red-500" }))] }), _jsx("p", { className: "text-xs text-muted-foreground truncate", children: stock.name })] }), _jsxs("div", { className: "text-right", children: [_jsxs("p", { className: "font-semibold text-foreground", children: ["KES ", stock.price] }), _jsxs(Badge, { variant: stock.change > 0 ? "default" : "destructive", className: "text-xs ".concat(stock.change > 0 ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'), children: [stock.change > 0 ? '+' : '', stock.change, "%"] })] })] }, stock.symbol)); }) })] }), _jsxs(Card, { className: "bg-card border-border", children: [_jsx(CardHeader, { className: "pb-3", children: _jsxs(CardTitle, { className: "text-lg text-foreground flex items-center gap-2", children: [_jsx(Calendar, { className: "w-5 h-5 text-secondary" }), "Upcoming Events"] }) }), _jsx(CardContent, { className: "space-y-3", children: upcomingEvents.map(function (event, index) { return (_jsxs("div", { className: "flex items-center gap-3 p-3 bg-white/5 rounded-lg", children: [_jsx("div", { className: "text-center", children: _jsx("div", { className: "text-sm font-semibold text-secondary", children: event.date }) }), _jsxs("div", { className: "flex-1", children: [_jsx("p", { className: "text-sm font-medium text-foreground", children: event.event }), _jsx(Badge, { variant: "outline", className: "text-xs mt-1 ".concat(event.type === 'earnings' ? 'border-blue-500/30 text-blue-500' :
+                                                event.type === 'dividend' ? 'border-green-500/30 text-green-500' :
+                                                    event.type === 'ipo' ? 'border-purple-500/30 text-purple-500' :
+                                                        'border-orange-500/30 text-orange-500'), children: event.type })] })] }, index)); }) })] }), _jsxs(Card, { className: "bg-card border-border", children: [_jsx(CardHeader, { className: "pb-3", children: _jsxs(CardTitle, { className: "text-lg text-foreground flex items-center gap-2", children: [_jsx(DollarSign, { className: "w-5 h-5 text-secondary" }), "NSE Summary"] }) }), _jsx(CardContent, { className: "space-y-3", children: _jsxs("div", { className: "grid grid-cols-2 gap-3", children: [_jsxs("div", { className: "p-3 bg-green-500/10 rounded-lg border border-green-500/20", children: [_jsx("div", { className: "text-xs text-green-500 font-medium", children: "NSE 20" }), _jsx("div", { className: "text-sm font-semibold text-foreground", children: "1,952.4" }), _jsx("div", { className: "text-xs text-green-500", children: "+1.2%" })] }), _jsxs("div", { className: "p-3 bg-blue-500/10 rounded-lg border border-blue-500/20", children: [_jsx("div", { className: "text-xs text-blue-500 font-medium", children: "Volume" }), _jsx("div", { className: "text-sm font-semibold text-foreground", children: "2.1M" }), _jsx("div", { className: "text-xs text-blue-500", children: "shares" })] })] }) })] })] }));
+};
+export default SidebarWidgets;
