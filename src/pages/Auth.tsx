@@ -100,6 +100,13 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           <CardDescription className="text-off-white/80">
             Your gateway to the Nairobi Securities Exchange
           </CardDescription>
+          {import.meta.env.PROD && (
+            <div className="mt-2 p-2 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+              <p className="text-xs text-blue-300">
+                🚀 Demo Mode: Use any email/password to explore the app
+              </p>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">

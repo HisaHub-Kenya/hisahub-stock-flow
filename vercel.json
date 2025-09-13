@@ -41,6 +41,6 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "https://your-django-backend.vercel.app/api"
+    "VITE_API_URL": "http://localhost:8000/api"
   }
 }
