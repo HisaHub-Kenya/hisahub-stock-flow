@@ -136,11 +136,12 @@ const BrokerIntegration: React.FC = () => {
       }
 
       // Create demo portfolio through the portfolio management function
+      const payload = {
+        "action": "create_portfolio",
+        "user_id": user.id
+      };
       const { data, error } = await supabase.functions.invoke('portfolio-management', {
-        body: {
-          action: 'create_portfolio',
-          user_id: user.id
-        }
+        body: payload
       });
 
       if (error) {
