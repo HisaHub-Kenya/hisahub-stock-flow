@@ -5,9 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { UserPlus, UserMinus, MessageCircle } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
-
-type UserProfile = Database['public']['Tables']['profiles']['Row'];
+export interface UserProfile {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  profile_picture?: string;
+  bio?: string;
+  followers_count?: number;
+  following_count?: number;
+  posts_count?: number;
+}
 
 interface UserProfileCardProps {
   user: UserProfile;

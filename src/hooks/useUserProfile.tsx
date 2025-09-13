@@ -1,11 +1,19 @@
-
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { apiHelpers, handleApiError } from '@/lib/api';
+import { getCurrentUser } from '@/lib/auth';
 import { toast } from 'sonner';
-import type { Database } from '@/integrations/supabase/types';
 
-type UserProfile = Database['public']['Tables']['profiles']['Row'];
-type UserProfileUpdate = Database['public']['Tables']['profiles']['Update'];
+export interface UserProfile {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  date_of_birth?: string;
+  profile_picture?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useUserProfile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -14,77 +22,37 @@ export const useUserProfile = () => {
 
   const fetchProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      setLoading(true);
+      const user = getCurrentUser();
       
       if (!user) {
         setLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // Profile doesn't exist, create one
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              id: user.id,
-              first_name: user.user_metadata?.first_name || null,
-              last_name: user.user_metadata?.last_name || null,
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error('Error creating profile:', createError);
-            toast.error('Failed to create user profile');
-          } else {
-            setProfile(newProfile);
-          }
-        } else {
-          console.error('Error fetching profile:', error);
-          toast.error('Failed to load profile');
-        }
-      } else {
-        setProfile(data);
-      }
+      // Fetch profile from Django API
+      const data = await apiHelpers.getProfile();
+      setProfile(data);
     } catch (error) {
-      console.error('Error in fetchProfile:', error);
-      toast.error('Failed to load profile');
+      console.error('Error fetching profile:', error);
+      const { message } = handleApiError(error);
+      toast.error(`Failed to load profile: ${message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const updateProfile = async (updates: UserProfileUpdate) => {
-    if (!profile) return false;
-
-    setUpdating(true);
+  const updateProfile = async (updates: Partial<UserProfile>) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', profile.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating profile:', error);
-        toast.error('Failed to update profile');
-        return false;
-      }
-
+      setUpdating(true);
+      const data = await apiHelpers.updateProfile(updates);
       setProfile(data);
       toast.success('Profile updated successfully');
       return true;
     } catch (error) {
-      console.error('Error in updateProfile:', error);
-      toast.error('Failed to update profile');
+      console.error('Error updating profile:', error);
+      const { message } = handleApiError(error);
+      toast.error(`Failed to update profile: ${message}`);
       return false;
     } finally {
       setUpdating(false);
@@ -100,6 +68,6 @@ export const useUserProfile = () => {
     loading,
     updating,
     updateProfile,
-    refetchProfile: fetchProfile
+    refetch: fetchProfile
   };
 };

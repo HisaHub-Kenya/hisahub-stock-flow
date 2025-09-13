@@ -5,15 +5,26 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Heart, MessageCircle, Bookmark, Share2, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import type { Database } from '@/integrations/supabase/types';
-
-type Post = Database['public']['Tables']['posts']['Row'] & {
-  profiles: {
+export interface Post {
+  id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  author: {
     first_name: string | null;
     last_name: string | null;
-  } | null;
+  };
   is_liked: boolean;
-};
+  likes_count: number;
+  comments_count: number;
+  engagement_score?: number;
+  trending_score?: number;
+  financial_impact?: {
+    symbol?: string;
+    price_change?: number;
+    percentage_change?: number;
+  };
+}
 
 interface EnhancedPostCardProps {
   post: Post;

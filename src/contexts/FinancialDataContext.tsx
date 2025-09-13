@@ -1,7 +1,8 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { useSupabaseData } from '../hooks/useSupabaseData';
+import { useAuth } from '../hooks/useAuth';
 import { useMarketData } from '../hooks/useMarketData';
+import { apiHelpers } from '../lib/api';
 
 // Define types for stocks, holdings, and market indices
 export interface Stock {
@@ -166,6 +167,15 @@ function financialDataReducer(state: FinancialDataState, action: any): Financial
         ...state,
         portfolioData: { ...state.portfolioData, ...action.payload }
       };
+    case 'ADD_FUNDS':
+      return {
+        ...state,
+        accountData: {
+          ...state.accountData,
+          balance: state.accountData.balance + action.payload,
+          totalValue: state.accountData.totalValue + action.payload
+        }
+      };
     default:
       return state;
   }
@@ -173,15 +183,15 @@ function financialDataReducer(state: FinancialDataState, action: any): Financial
 
 export const FinancialDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(financialDataReducer, initialState);
-  const { user, portfolio, loading: userLoading, placeOrder, getPortfolioSummary } = useSupabaseData();
+  const { user, loading: userLoading } = useAuth();
   const { stocks, marketIndices, loading: marketLoading, updateMarketData } = useMarketData();
 
   useEffect(() => {
     dispatch({
       type: 'SET_USER_DATA',
-      payload: { user, portfolio }
+      payload: { user, portfolio: null }
     });
-  }, [user, portfolio]);
+  }, [user]);
 
   useEffect(() => {
     dispatch({
@@ -198,70 +208,52 @@ export const FinancialDataProvider: React.FC<{ children: ReactNode }> = ({ child
   }, [userLoading, marketLoading]);
 
   useEffect(() => {
-    if (portfolio) {
+    if (user) {
       loadPortfolioData();
     }
-  }, [portfolio]);
+  }, [user]);
 
   const loadPortfolioData = async () => {
-    const portfolioData = await getPortfolioSummary();
-    if (portfolioData) {
-      dispatch({
-        type: 'SET_HOLDINGS',
-        payload: portfolioData.holdings
-      });
-      
-      const totalValue = portfolioData.total_value || 0;
-      const totalPnL = portfolioData.holdings.reduce((sum: number, h: any) => sum + (h.unrealized_pnl || 0), 0);
-      const dailyChangePercent = totalValue > 0 ? (totalPnL / (totalValue - totalPnL)) * 100 : 0;
-      
-      dispatch({
-        type: 'UPDATE_ACCOUNT_DATA',
-        payload: {
-          totalValue,
-          totalPnL
-        }
-      });
+    try {
+      const portfolioData = await apiHelpers.getPortfolioSummary();
+      if (portfolioData) {
+        dispatch({
+          type: 'SET_HOLDINGS',
+          payload: portfolioData.holdings || []
+        });
+        
+        const totalValue = portfolioData.total_value || 0;
+        const totalPnL = (portfolioData.holdings || []).reduce((sum: number, h: any) => sum + (h.unrealized_pnl || 0), 0);
+        const dailyChangePercent = totalValue > 0 ? (totalPnL / (totalValue - totalPnL)) * 100 : 0;
+        
+        dispatch({
+          type: 'UPDATE_ACCOUNT_DATA',
+          payload: {
+            totalValue,
+            totalPnL
+          }
+        });
 
-      dispatch({
-        type: 'UPDATE_PORTFOLIO_DATA',
-        payload: {
-          totalValue,
-          dailyChange: totalPnL,
-          dailyChangePercent,
-          weeklyChangePercent: 2.5, // Mock data
-          monthlyChangePercent: 8.2, // Mock data
-        }
-      });
+        dispatch({
+          type: 'UPDATE_PORTFOLIO_DATA',
+          payload: {
+            totalValue,
+            dailyChange: totalPnL,
+            dailyChangePercent,
+            weeklyChangePercent: 2.5, // Mock data
+            monthlyChangePercent: 8.2, // Mock data
+          }
+        });
 
-      // Mock transactions data - in a real app this would come from the API
-      const mockTransactions: Transaction[] = [
-        {
-          id: '1',
-          symbol: 'EQTY',
-          type: 'BUY',
-          quantity: 100,
-          price: 45.50,
-          total: 4550,
-          date: '2024-01-15',
-          status: 'Completed'
-        },
-        {
-          id: '2',
-          symbol: 'KCB',
-          type: 'BUY',
-          quantity: 200,
-          price: 38.25,
-          total: 7650,
-          date: '2024-01-14',
-          status: 'Completed'
-        }
-      ];
-
-      dispatch({
-        type: 'SET_TRANSACTIONS',
-        payload: mockTransactions
-      });
+        // Load transactions from API
+        const transactions = await apiHelpers.getTransactions();
+        dispatch({
+          type: 'SET_TRANSACTIONS',
+          payload: transactions || []
+        });
+      }
+    } catch (error) {
+      console.error('Error loading portfolio data:', error);
     }
   };
 
@@ -269,11 +261,21 @@ export const FinancialDataProvider: React.FC<{ children: ReactNode }> = ({ child
     state,
     dispatch,
     placeOrder: async (symbol: string, quantity: number, orderType = 'market') => {
-      const success = await placeOrder(symbol, quantity, orderType);
-      if (success) {
-        await loadPortfolioData(); // Refresh portfolio data
+      try {
+        const success = await apiHelpers.placeOrder({
+          symbol,
+          quantity,
+          order_type: orderType,
+          side: quantity > 0 ? 'buy' : 'sell'
+        });
+        if (success) {
+          await loadPortfolioData(); // Refresh portfolio data
+        }
+        return success;
+      } catch (error) {
+        console.error('Error placing order:', error);
+        return false;
       }
-      return success;
     },
     updateMarketData
   };

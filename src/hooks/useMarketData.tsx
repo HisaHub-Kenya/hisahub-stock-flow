@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { apiHelpers } from '@/lib/api';
 
 export const useMarketData = () => {
   const [stocks, setStocks] = useState([]);
@@ -10,27 +10,12 @@ export const useMarketData = () => {
   useEffect(() => {
     fetchMarketData();
     
-    // Set up real-time subscriptions
-    const stocksChannel = supabase
-      .channel('stocks-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'stock_prices' },
-        () => fetchStockPrices()
-      )
-      .subscribe();
+    // Set up polling for real-time updates (every 30 seconds)
+    const interval = setInterval(() => {
+      fetchMarketData();
+    }, 30000);
 
-    const marketChannel = supabase
-      .channel('market-changes')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'market_data' },
-        () => fetchMarketIndices()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(stocksChannel);
-      supabase.removeChannel(marketChannel);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   const fetchMarketData = async () => {
@@ -40,34 +25,9 @@ export const useMarketData = () => {
 
   const fetchStockPrices = async () => {
     try {
-      const { data } = await supabase
-        .from('stocks')
-        .select(`
-          *,
-          stock_prices:stock_prices!inner (
-            price,
-            volume,
-            high,
-            low,
-            timestamp
-          )
-        `)
-        .eq('is_active', true)
-        .order('timestamp', { foreignTable: 'stock_prices', ascending: false })
-        .limit(1, { foreignTable: 'stock_prices' });
-
+      const data = await apiHelpers.getStocks();
       if (data) {
-        const processedStocks = data.map(stock => ({
-          ...stock,
-          price: stock.stock_prices[0]?.price || 0,
-          volume: stock.stock_prices[0]?.volume || 0,
-          high: stock.stock_prices[0]?.high || 0,
-          low: stock.stock_prices[0]?.low || 0,
-          change: Math.random() * 2 - 1, // Simulated change
-          changePercent: (Math.random() * 4 - 2).toFixed(2)
-        }));
-        
-        setStocks(processedStocks);
+        setStocks(data);
       }
     } catch (error) {
       console.error('Error fetching stock prices:', error);
@@ -76,11 +36,7 @@ export const useMarketData = () => {
 
   const fetchMarketIndices = async () => {
     try {
-      const { data } = await supabase
-        .from('market_data')
-        .select('*')
-        .order('timestamp', { ascending: false });
-
+      const data = await apiHelpers.getMarketIndices();
       if (data) {
         setMarketIndices(data);
       }
@@ -91,7 +47,7 @@ export const useMarketData = () => {
 
   const updateMarketData = async () => {
     try {
-      await supabase.functions.invoke('market-data');
+      await fetchMarketData();
     } catch (error) {
       console.error('Error updating market data:', error);
     }

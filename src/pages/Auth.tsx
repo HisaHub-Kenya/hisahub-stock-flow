@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
+import { login, register } from "@/lib/auth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -44,20 +44,12 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     }
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success("Login successful!");
-        onLogin();
-        navigate('/'); // Redirect to home page
-      }
-    } catch (error) {
-      toast.error("An unexpected error occurred during login.");
+      await login(email, password);
+      toast.success("Login successful!");
+      onLogin();
+      navigate('/'); // Redirect to home page
+    } catch (error: any) {
+      toast.error(error.message || "An unexpected error occurred during login.");
     } finally {
       setLoading(false);
     }
@@ -88,38 +80,23 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name,
-          }
-        }
-      });
-
-      if (error) {
-        if (error.message === "User already registered") {
-          toast.error("An account with this email already exists. Please try logging in instead.");
-        } else {
-          toast.error(error.message);
-        }
+      const nameParts = name.split(' ');
+      await register(
+        email, 
+        password, 
+        nameParts[0], 
+        nameParts.slice(1).join(' ')
+      );
+      
+      toast.success("Account created successfully!");
+      onLogin();
+      navigate('/'); // Redirect to home page
+    } catch (error: any) {
+      if (error.message?.includes("already exists")) {
+        toast.error("An account with this email already exists. Please try logging in instead.");
       } else {
-        // If user is immediately available (no email confirmation required)
-        if (data.user && !data.user.email_confirmed_at) {
-          toast.success("Account created successfully! You are now logged in.");
-          onLogin();
-          navigate('/');
-        } else if (data.user) {
-          toast.success("Account created successfully! You are now logged in.");
-          onLogin();
-          navigate('/');
-        } else {
-          toast.success("Account created successfully! Please check your email for verification.");
-        }
+        toast.error(error.message || "An unexpected error occurred during signup.");
       }
-    } catch (error) {
-      toast.error("An unexpected error occurred during signup.");
     } finally {
       setLoading(false);
     }

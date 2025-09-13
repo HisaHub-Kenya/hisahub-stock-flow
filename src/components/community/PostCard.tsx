@@ -5,14 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Heart, MessageCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import type { Database } from '@/integrations/supabase/types';
-
-type Post = Database['public']['Tables']['posts']['Row'] & {
-  profiles: {
+export interface Post {
+  id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  author: {
     first_name: string | null;
     last_name: string | null;
-  } | null;
+  };
   is_liked: boolean;
+  likes_count: number;
+  comments_count: number;
 };
 
 interface PostCardProps {
@@ -21,9 +25,9 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onToggleLike }) => {
-  const displayName = post.profiles?.first_name && post.profiles?.last_name 
-    ? `${post.profiles.first_name} ${post.profiles.last_name}`
-    : post.profiles?.first_name || post.profiles?.last_name || 'Anonymous User';
+  const displayName = post.author?.first_name && post.author?.last_name 
+    ? `${post.author.first_name} ${post.author.last_name}`
+    : post.author?.first_name || post.author?.last_name || 'Anonymous User';
 
   const initials = displayName
     .split(' ')

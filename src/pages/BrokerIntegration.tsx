@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Shield, Plus, Lightbulb, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser } from "@/lib/auth";
+import { apiHelpers, handleApiError } from "@/lib/api";
 import HisaAIButton from "../components/HisaAIButton";
 
 const brokers = [
@@ -86,15 +87,28 @@ const BrokerIntegration: React.FC = () => {
     }
 
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    
+    try {
+      // Call broker integration API
+      await apiHelpers.linkBrokerAccount({
+        broker_id: selectedBroker,
+        cds_number: loginData.cdsNumber,
+        password: loginData.password,
+        otp: loginData.otp
+      });
+
       setLinkedBrokers(prev => [...prev, selectedBroker]);
       toast.success(`Successfully linked ${selectedBrokerData?.name}`);
-      setIsLoading(false);
       setSelectedBroker("");
       setHasAccount(null);
       setLoginData({ cdsNumber: "", password: "", otp: "" });
-    }, 2000);
+    } catch (error) {
+      console.error('Broker login error:', error);
+      const { message } = handleApiError(error);
+      toast.error(`Failed to link broker account: ${message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKycSubmit = async () => {
@@ -104,11 +118,21 @@ const BrokerIntegration: React.FC = () => {
     }
 
     setIsLoading(true);
-    // Simulate KYC submission and account creation
-    setTimeout(() => {
+    
+    try {
+      // Call KYC submission API
+      await apiHelpers.submitKyc({
+        broker_id: selectedBroker,
+        full_name: kycData.fullName,
+        id_number: kycData.idNumber,
+        kra_pin: kycData.kraPin,
+        phone_number: kycData.phoneNumber,
+        email: kycData.email,
+        bank_account: kycData.bankAccount
+      });
+
       setLinkedBrokers(prev => [...prev, selectedBroker]);
       toast.success(`Account created and linked with ${selectedBrokerData?.name}`);
-      setIsLoading(false);
       setSelectedBroker("");
       setHasAccount(null);
       setKycData({
@@ -119,7 +143,13 @@ const BrokerIntegration: React.FC = () => {
         email: "",
         bankAccount: ""
       });
-    }, 3000);
+    } catch (error) {
+      console.error('KYC submission error:', error);
+      const { message } = handleApiError(error);
+      toast.error(`Failed to submit KYC: ${message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDemoAccount = async () => {
@@ -127,33 +157,23 @@ const BrokerIntegration: React.FC = () => {
     
     try {
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const user = getCurrentUser();
       
-      if (userError || !user) {
+      if (!user) {
         toast.error("Please log in to activate demo mode");
         setIsLoading(false);
         return;
       }
 
-      // Create demo portfolio through the portfolio management function
-      const payload = {
-        "action": "create_portfolio",
-        "user_id": user.id
-      };
-      const { data, error } = await supabase.functions.invoke('portfolio-management', {
-        body: payload
-      });
+      // Create demo portfolio through Django API
+      await apiHelpers.depositFunds(10000, 'demo_activation');
 
-      if (error) {
-        console.error('Demo portfolio creation error:', error);
-        toast.error("Failed to create demo portfolio");
-      } else {
-        toast.success("Demo account activated! You now have KES 10,000 to practice trading.");
-        navigate("/trade");
-      }
+      toast.success("Demo account activated! You now have KES 10,000 to practice trading.");
+      navigate("/trade");
     } catch (error) {
       console.error('Error activating demo account:', error);
-      toast.error("An error occurred while activating demo account");
+      const { message } = handleApiError(error);
+      toast.error(`Failed to activate demo account: ${message}`);
     } finally {
       setIsLoading(false);
     }

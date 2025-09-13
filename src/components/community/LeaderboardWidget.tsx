@@ -3,9 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Medal, Award, TrendingUp } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
-
-type UserProfile = Database['public']['Tables']['profiles']['Row'];
+export interface UserProfile {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  profile_picture?: string;
+  total_pnl?: number;
+  win_rate?: number;
+  trades_count?: number;
+}
 
 interface LeaderboardWidgetProps {
   users: UserProfile[];

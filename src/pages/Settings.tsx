@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { supabase } from '@/integrations/supabase/client';
+import { logout } from '@/lib/auth';
 import { toast } from 'sonner';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import FloatingJoystick from '@/components/FloatingJoystick';
@@ -25,11 +25,13 @@ const Settings: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error('Failed to log out');
-    } else {
+    try {
+      await logout();
       toast.success('Logged out successfully');
+      // Redirect to auth page
+      window.location.href = '/auth';
+    } catch (error) {
+      toast.error('Failed to log out');
     }
   };
 

@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useTrading } from "@/hooks/useTrading";
 
 interface Stock {
   symbol: string;
@@ -38,9 +39,13 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ stock }) => {
   const [stopPrice, setStopPrice] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [orderSide, setOrderSide] = useState<"buy" | "sell">("buy");
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   // Default broker for now (can be updated when broker login is implemented)
   const defaultBroker = { id: "genghis", name: "Genghis Capital", fee: "0.25%" };
+  
+  // Connect to trading API
+  const { buyStock, sellStock } = useTrading();
 
   const calculateTotal = () => {
     const qty = parseFloat(quantity) || 0;
@@ -73,13 +78,33 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ stock }) => {
     setShowConfirmation(true);
   };
 
-  const confirmOrder = () => {
+  const confirmOrder = async () => {
+    setIsPlacingOrder(true);
+    const qty = parseFloat(quantity);
     const { total } = calculateTotal();
-    toast.success(`${orderSide.toUpperCase()} order placed for ${quantity} shares of ${stock.symbol} via ${defaultBroker.name} - Total: KES ${total.toFixed(2)}`);
-    setShowConfirmation(false);
-    setQuantity("");
-    setLimitPrice("");
-    setStopPrice("");
+    
+    try {
+      let success = false;
+      
+      if (orderSide === 'buy') {
+        success = await buyStock(stock.symbol, qty, orderType as 'market' | 'limit');
+      } else {
+        success = await sellStock(stock.symbol, qty, orderType as 'market' | 'limit');
+      }
+      
+      if (success) {
+        toast.success(`${orderSide.toUpperCase()} order placed for ${quantity} shares of ${stock.symbol} via ${defaultBroker.name} - Total: KES ${total.toFixed(2)}`);
+        setShowConfirmation(false);
+        setQuantity("");
+        setLimitPrice("");
+        setStopPrice("");
+      }
+    } catch (error) {
+      console.error('Order placement error:', error);
+      toast.error('Failed to place order. Please try again.');
+    } finally {
+      setIsPlacingOrder(false);
+    }
   };
 
   const { subtotal, fee, total } = calculateTotal();
@@ -188,9 +213,10 @@ const OrderPanel: React.FC<OrderPanelProps> = ({ stock }) => {
             </Button>
             <Button 
               onClick={confirmOrder}
+              disabled={isPlacingOrder}
               className={orderSide === 'buy' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
             >
-              Confirm {orderSide}
+              {isPlacingOrder ? 'Placing Order...' : `Confirm ${orderSide}`}
             </Button>
           </DialogFooter>
         </DialogContent>

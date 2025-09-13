@@ -1,21 +1,57 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { PlusCircle, MinusCircle, TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFinancialData } from "../../contexts/FinancialDataContext";
+import { apiHelpers, handleApiError } from "@/lib/api";
+import { toast } from "sonner";
 
 const AccountSummaryCard: React.FC = () => {
   const { state, dispatch } = useFinancialData();
+  const [isProcessing, setIsProcessing] = useState(false);
   
-  const handleAddFunds = () => {
-    // Demo: Add 10,000 KES
-    dispatch({ type: 'ADD_FUNDS', payload: 10000 });
+  const handleAddFunds = async () => {
+    setIsProcessing(true);
+    try {
+      // For demo purposes, we'll use a fixed amount
+      // In production, this would open a payment modal
+      const amount = 10000;
+      
+      const result = await apiHelpers.depositFunds(amount, 'bank_transfer');
+      
+      // Update local state
+      dispatch({ type: 'ADD_FUNDS', payload: amount });
+      
+      toast.success(`Successfully deposited KES ${amount.toLocaleString()}`);
+    } catch (error) {
+      const { message } = handleApiError(error);
+      toast.error(`Deposit failed: ${message}`);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const handleWithdraw = () => {
-    // Demo: Withdraw 5,000 KES (if sufficient balance)
-    if (state.accountData.balance >= 5000) {
-      dispatch({ type: 'ADD_FUNDS', payload: -5000 });
+  const handleWithdraw = async () => {
+    if (state.accountData.balance < 5000) {
+      toast.error('Insufficient balance for withdrawal');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const amount = 5000;
+      
+      const result = await apiHelpers.withdrawFunds(amount, 'bank_transfer');
+      
+      // Update local state
+      dispatch({ type: 'ADD_FUNDS', payload: -amount });
+      
+      toast.success(`Withdrawal request submitted for KES ${amount.toLocaleString()}`);
+    } catch (error) {
+      const { message } = handleApiError(error);
+      toast.error(`Withdrawal failed: ${message}`);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -63,21 +99,22 @@ const AccountSummaryCard: React.FC = () => {
       <div className="flex gap-3">
         <Button 
           onClick={handleAddFunds}
+          disabled={isProcessing}
           className="flex-1 bg-green-600 hover:bg-green-700 text-white"
           size="sm"
         >
           <PlusCircle className="h-4 w-4 mr-2" />
-          Deposit
+          {isProcessing ? 'Processing...' : 'Deposit'}
         </Button>
         <Button 
           onClick={handleWithdraw}
+          disabled={isProcessing || state.accountData.balance < 5000}
           variant="outline"
           className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10"
           size="sm"
-          disabled={state.accountData.balance < 5000}
         >
           <MinusCircle className="h-4 w-4 mr-2" />
-          Withdraw
+          {isProcessing ? 'Processing...' : 'Withdraw'}
         </Button>
       </div>
     </div>
