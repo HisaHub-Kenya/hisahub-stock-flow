@@ -28,6 +28,12 @@ const Settings: React.FC = () => {
     try {
       await logout();
       toast.success('Logged out successfully');
+      // Clear persisted store to remove any cached auth state
+      try {
+        localStorage.removeItem('hisahub-store');
+      } catch (e) {
+        console.warn('Failed to clear persisted store on logout', e);
+      }
       // Redirect to auth page
       window.location.href = '/auth';
     } catch (error) {

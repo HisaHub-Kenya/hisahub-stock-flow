@@ -16,7 +16,10 @@ export const useAuth = () => {
   const handleLogout = async () => {
     try {
       await authLogout();
+      try { localStorage.removeItem('hisahub-store'); } catch (e) { console.warn('Failed clearing hisahub-store', e); }
       setUser(null);
+      // Force navigation back to auth
+      try { window.location.href = '/auth'; } catch (e) { console.warn('Logout redirect failed', e); }
     } catch (error) {
       console.error('Logout error:', error);
     }

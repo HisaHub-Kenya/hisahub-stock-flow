@@ -287,10 +287,20 @@ export const FinancialDataProvider: React.FC<{ children: ReactNode }> = ({ child
   );
 };
 
+const noop = async () => {};
+const defaultContextValue: FinancialDataContextType = {
+  state: initialState,
+  dispatch: () => {},
+  placeOrder: async () => false,
+  updateMarketData: noop as any,
+};
+
 export const useFinancialData = () => {
   const context = useContext(FinancialDataContext);
   if (context === undefined) {
-    throw new Error('useFinancialData must be used within a FinancialDataProvider');
+    // Return a safe fallback instead of throwing so the app doesn't crash
+    // if a component is mounted before the provider is available (transient state).
+    return defaultContextValue;
   }
   return context;
 };

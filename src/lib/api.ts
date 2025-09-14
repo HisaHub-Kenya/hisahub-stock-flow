@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getValidToken } from './auth';
+import { logout as authLogout } from './auth';
 import { sanitizeString, sanitizeNumber, sanitizeApiResponse, validateStockSymbol } from './security';
 
 // API Configuration
@@ -16,9 +17,16 @@ export const apiClient = axios.create({
 
 // Add auth interceptor
 apiClient.interceptors.request.use(async (config) => {
-  const token = await getValidToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  try {
+    const token = await getValidToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log('[api] attaching Authorization header (masked)', `${String(token).slice(0,6)}...`);
+    } else {
+      console.log('[api] no token available for request to', config.url);
+    }
+  } catch (e) {
+    console.error('[api] error getting valid token for request', e);
   }
   return config;
 });
@@ -44,7 +52,16 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       }
     }
-    
+    // If we reach here and response is 401, perform a logout to clear client state
+    try {
+      if (error.response?.status === 401) {
+        console.warn('[api] received 401 and could not recover; clearing auth state');
+        await authLogout();
+        try { localStorage.removeItem('hisahub-store'); } catch (e) { }
+      }
+    } catch (e) {
+      console.error('[api] error during auth cleanup', e);
+    }
     return Promise.reject(error);
   }
 );

@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiHelpers, handleApiError } from '../lib/api';
 import { toast } from 'sonner';
-import { getCurrentUser, getValidToken } from '../lib/auth';
+import { getCurrentUser, getValidToken, logout as authLogout } from '../lib/auth';
 
 // Types
 export interface User {
@@ -88,6 +88,7 @@ interface AppState {
   user: User | null;
   isAuthenticated: boolean;
   isAuthChecked: boolean;
+  authSyncError: boolean;
   isLoading: boolean;
   
   // Portfolio & Trading
@@ -107,6 +108,7 @@ interface AppState {
   // Actions
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
+  setAuthSyncError: (v: boolean) => void;
   updatePortfolioData: (data: Partial<PortfolioData>) => void;
   setHoldings: (holdings: Holding[]) => void;
   setTransactions: (transactions: Transaction[]) => void;
@@ -290,6 +292,7 @@ export const useAppStore = create<AppState>()(
   user: null,
   isAuthenticated: false,
   isAuthChecked: false,
+  authSyncError: false,
   isLoading: false,
       portfolioData: {
         totalValue: 5110.00,
@@ -313,17 +316,48 @@ export const useAppStore = create<AppState>()(
         user, 
         isAuthenticated: !!user && user.is_authenticated 
       }),
+      setAuthSyncError: (v: boolean) => set({ authSyncError: v }),
       syncAuthState: async () => {
+        console.log('[useAppStore] syncAuthState: start');
         try {
           // Ensure token is valid (refresh if needed)
           const token = await getValidToken();
-          const currentUser = getCurrentUser();
-          const isAuth = !!token && !!currentUser && currentUser.is_authenticated;
-          set({ user: currentUser, isAuthenticated: isAuth, isAuthChecked: true });
-          return isAuth;
+          if (!token) {
+            console.log('[useAppStore] syncAuthState: no valid token');
+            // No token available -> unauthenticated
+            set({ user: null, isAuthenticated: false, isAuthChecked: true });
+            return false;
+          }
+
+          console.log('[useAppStore] syncAuthState: valid token present (masked)', token ? `${String(token).slice(0,6)}...` : null);
+
+          // Token exists (or was refreshed) — validate session by calling profile endpoint
+          try {
+            const profile = await apiHelpers.getProfile();
+            console.log('[useAppStore] syncAuthState: profile fetched', { id: profile?.id, email: profile?.email });
+            // Save the validated user into store
+            set({ user: profile, isAuthenticated: true, isAuthChecked: true });
+            return true;
+          } catch (profileErr: any) {
+            // If profile fetch failed, log and clear tokens
+            console.error('[useAppStore] syncAuthState: profile fetch failed', profileErr);
+            try {
+              await authLogout();
+            } catch (logoutErr) {
+              console.warn('[useAppStore] syncAuthState: logout error', logoutErr);
+            }
+            // set authSyncError to indicate server validation failure
+            set({ user: null, isAuthenticated: false, isAuthChecked: true, authSyncError: true });
+            return false;
+          }
         } catch (err) {
-          set({ user: null, isAuthenticated: false, isAuthChecked: true });
+          console.error('[useAppStore] syncAuthState: unexpected error', err);
+          // Ensure we always set isAuthChecked to avoid infinite loader
+          set({ user: null, isAuthenticated: false, isAuthChecked: true, authSyncError: true });
           return false;
+        } finally {
+          const s = get();
+          console.log('[useAppStore] syncAuthState: end', { isAuthenticated: s.isAuthenticated, isAuthChecked: s.isAuthChecked, authSyncError: s.authSyncError, userId: s.user?.id });
         }
       },
       setLoading: (isLoading) => set({ isLoading }),

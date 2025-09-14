@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 interface AuthProps {
-  onLogin: () => void;
+  onLogin: () => Promise<void>;
 }
 
 const Auth: React.FC<AuthProps> = ({ onLogin }) => {
@@ -37,10 +37,10 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     }
 
     try {
-      await login(email, password);
-      toast.success("Login successful!");
-      onLogin();
-      navigate('/'); // Redirect to home page
+  await login(email, password);
+  toast.success("Login successful!");
+  // Let parent perform auth-sync and navigation to avoid races
+  try { await onLogin(); } catch (e) { console.warn('onLogin handler failed', e); }
     } catch (error: any) {
       console.error('Login error:', error);
       if (error.message?.includes('fetch')) {
@@ -80,9 +80,9 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         nameParts.slice(1).join(' ')
       );
       
-      toast.success("Account created successfully!");
-      onLogin();
-      navigate('/'); // Redirect to home page
+  toast.success("Account created successfully!");
+  // Let parent perform auth-sync and navigation to avoid races
+  try { await onLogin(); } catch (e) { console.warn('onLogin handler failed', e); }
     } catch (error: any) {
       console.error('Signup error:', error);
       if (error.message?.includes("already exists")) {

@@ -273,10 +273,12 @@ class AuthManager {
 
   async refreshAccessToken(): Promise<string | null> {
     if (!this.refreshToken) {
+      console.log('[auth] refreshAccessToken: no refresh token available');
       return null;
     }
 
     try {
+      console.log('[auth] refreshAccessToken: attempting refresh (masked)', `${String(this.refreshToken).slice(0,6)}...`);
       const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/token/refresh/`, {
         method: 'POST',
         headers: {
@@ -286,6 +288,8 @@ class AuthManager {
       });
 
       if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        console.warn('[auth] refreshAccessToken: refresh failed', { status: response.status, text });
         this.clearTokens();
         return null;
       }
@@ -296,10 +300,10 @@ class AuthManager {
       if (typeof window !== 'undefined') {
         localStorage.setItem('access_token', data.access);
       }
-      
+      console.log('[auth] refreshAccessToken: refresh succeeded (masked)', `${String(data.access).slice(0,6)}...`);
       return data.access;
     } catch (error) {
-      console.error('Token refresh error:', error);
+      console.error('[auth] Token refresh error:', error);
       this.clearTokens();
       return null;
     }
@@ -318,21 +322,26 @@ class AuthManager {
   }
 
   async getValidToken(): Promise<string | null> {
+    console.log('[auth] getValidToken: enter');
     if (!this.accessToken) {
+      console.log('[auth] getValidToken: no access token available');
       return null;
     }
 
     // Handle mock tokens (they don't expire)
-    if (this.accessToken.startsWith('mock_access_token_')) {
+    if (String(this.accessToken).startsWith('mock_access_token_')) {
+      console.log('[auth] getValidToken: mock token, returning');
       return this.accessToken;
     }
 
     // Check if token is expired using secure utility
     if (isTokenExpired(this.accessToken)) {
-      // Token expired, try to refresh
-      return await this.refreshAccessToken();
+      console.log('[auth] getValidToken: access token expired, attempting refresh');
+      const newToken = await this.refreshAccessToken();
+      console.log('[auth] getValidToken: refresh result (masked)', newToken ? `${String(newToken).slice(0,6)}...` : null);
+      return newToken;
     }
-    
+    console.log('[auth] getValidToken: access token valid (masked)', `${String(this.accessToken).slice(0,6)}...`);
     return this.accessToken;
   }
 }
