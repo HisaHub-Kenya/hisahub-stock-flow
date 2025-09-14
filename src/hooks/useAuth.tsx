@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getCurrentUser, isAuthenticated, logout as authLogout } from '@/lib/auth';
-import { User } from '@/lib/auth';
+import { getCurrentUser, isAuthenticated, logout as authLogout, User } from '../lib/auth';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);

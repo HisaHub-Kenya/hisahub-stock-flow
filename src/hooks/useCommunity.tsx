@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { apiHelpers, handleApiError } from "@/lib/api";
+// Removed unnecessary import statement
+// import "../lib/api"; // This line is removed
+import { apiHelpers, handleApiError } from "../lib/api";
 
 export const useCommunity = () => {
   const [posts, setPosts] = useState<any[]>([]);
@@ -77,7 +79,25 @@ export const useCommunity = () => {
 
   useEffect(() => {
     fetchPosts();
-    // TODO: fetch users & followed users from backend
+    // Fetch users from backend
+    (async () => {
+      try {
+        if (apiHelpers.getCommunityUsers) {
+          const usersData = await apiHelpers.getCommunityUsers();
+          if (usersData) setUsers(usersData);
+        }
+      } catch (err) {
+        console.error("Error fetching users:", err);
+      }
+      try {
+        if (apiHelpers.getFollowedUsers) {
+          const followedData = await apiHelpers.getFollowedUsers();
+          if (followedData) setFollowedUsers(followedData.map((u: any) => u.id));
+        }
+      } catch (err) {
+        console.error("Error fetching followed users:", err);
+      }
+    })();
   }, []);
 
   return {

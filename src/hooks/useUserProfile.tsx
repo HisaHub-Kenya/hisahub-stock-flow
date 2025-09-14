@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { apiHelpers, handleApiError } from '@/lib/api';
-import { getCurrentUser } from '@/lib/auth';
+import { apiHelpers, handleApiError } from '../lib/api';
+import { getCurrentUser } from '../lib/auth';
 import { toast } from 'sonner';
 
 export interface UserProfile {
@@ -41,8 +41,8 @@ export const useUserProfile = () => {
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
-      const { message } = handleApiError(error);
-      toast.error(`Failed to load profile: ${message}`);
+        const apiError = handleApiError(error) || { message: 'Unknown error', status: 0 };
+        toast.error(`Failed to load profile: ${apiError.message}`);
     } finally {
       setLoading(false);
     }
@@ -57,8 +57,8 @@ export const useUserProfile = () => {
       return true;
     } catch (error) {
       console.error('Error updating profile:', error);
-      const { message } = handleApiError(error);
-      toast.error(`Failed to update profile: ${message}`);
+        const apiError = handleApiError(error) || { message: 'Unknown error', status: 0 };
+        toast.error(`Failed to update profile: ${apiError.message}`);
       return false;
     } finally {
       setUpdating(false);

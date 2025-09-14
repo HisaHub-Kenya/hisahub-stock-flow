@@ -84,8 +84,16 @@ class AuthManager {
     }
     
     // Check if we're in production and API is not available
-    const isProduction = import.meta.env.PROD;
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+    let apiUrl = 'http://localhost:8000/api';
+    if (typeof process !== 'undefined' && process.env && process.env.API_BASE_URL) {
+      apiUrl = process.env.API_BASE_URL;
+    } else if (typeof window !== 'undefined') {
+      // @ts-ignore
+      if ((window as any).API_BASE_URL) {
+        apiUrl = (window as any).API_BASE_URL;
+      }
+    }
     
     // Use mock authentication if:
     // 1. In production and no API URL set
@@ -175,8 +183,16 @@ class AuthManager {
     }
     
     // Check if we're in production and API is not available
-    const isProduction = import.meta.env.PROD;
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+    let apiUrl = 'http://localhost:8000/api';
+    if (typeof process !== 'undefined' && process.env && process.env.API_BASE_URL) {
+      apiUrl = process.env.API_BASE_URL;
+    } else if (typeof window !== 'undefined') {
+      // @ts-ignore
+      if ((window as any).API_BASE_URL) {
+        apiUrl = (window as any).API_BASE_URL;
+      }
+    }
     
     // Use mock registration if:
     // 1. In production and no API URL set
@@ -255,7 +271,7 @@ class AuthManager {
   async logout(): Promise<void> {
     if (this.refreshToken) {
       try {
-        await fetch(`${import.meta.env.VITE_API_URL}/auth/logout/`, {
+  await fetch(`${typeof process !== 'undefined' && process.env && process.env.API_BASE_URL ? process.env.API_BASE_URL : (typeof window !== 'undefined' && (window as any).API_BASE_URL ? (window as any).API_BASE_URL : 'http://localhost:8000/api')}/auth/logout/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${this.accessToken}`,
@@ -279,7 +295,7 @@ class AuthManager {
 
     try {
       console.log('[auth] refreshAccessToken: attempting refresh (masked)', `${String(this.refreshToken).slice(0,6)}...`);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/token/refresh/`, {
+  const response = await fetch(`${typeof process !== 'undefined' && process.env && process.env.API_BASE_URL ? process.env.API_BASE_URL : (typeof window !== 'undefined' && (window as any).API_BASE_URL ? (window as any).API_BASE_URL : 'http://localhost:8000/api')}/auth/token/refresh/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

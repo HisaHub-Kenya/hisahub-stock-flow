@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '../ui/card';
+import { Button } from '../ui/button';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Badge } from '../ui/badge';
 import { Heart, MessageCircle, Bookmark, Share2, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 export interface Post {

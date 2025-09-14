@@ -1,10 +1,21 @@
+  // Community user operations
 import axios from 'axios';
 import { getValidToken } from './auth';
 import { logout as authLogout } from './auth';
 import { sanitizeString, sanitizeNumber, sanitizeApiResponse, validateStockSymbol } from './security';
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+function getApiBaseUrl(): string {
+  if (typeof globalThis !== 'undefined' && (globalThis as any).API_BASE_URL) {
+    return (globalThis as any).API_BASE_URL;
+  }
+  if (typeof process !== 'undefined' && process.env && process.env.API_BASE_URL) {
+    return process.env.API_BASE_URL;
+  }
+  return 'http://localhost:8000/api';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance with default config
 export const apiClient = axios.create({
@@ -124,242 +135,63 @@ export const API_ENDPOINTS = {
 
 // API Helper Functions
 export const apiHelpers = {
-  // Portfolio operations
-  async depositFunds(amount: number, method: string = 'bank_transfer') {
-    const response = await apiClient.post(API_ENDPOINTS.PORTFOLIO.DEPOSIT, {
-      amount,
-      method,
-    });
-    return response.data;
-  },
-
-  async withdrawFunds(amount: number, method: string = 'bank_transfer') {
-    const response = await apiClient.post(API_ENDPOINTS.PORTFOLIO.WITHDRAW, {
-      amount,
-      method,
-    });
-    return response.data;
-  },
-
-  async getPortfolioSummary() {
-    const response = await apiClient.get(API_ENDPOINTS.PORTFOLIO.GET_SUMMARY);
-    return response.data;
-  },
-
-  async getTransactions(limit = 50, offset = 0) {
-    const response = await apiClient.get(API_ENDPOINTS.PORTFOLIO.TRANSACTIONS, {
-      params: { limit, offset },
-    });
-    return response.data;
-  },
-
-  // Trading operations
-  async placeOrder(orderData: {
-    symbol: string;
-    quantity: number;
-    order_type: 'market' | 'limit';
-    side: 'buy' | 'sell';
-    limit_price?: number;
-  }) {
-    const response = await apiClient.post(API_ENDPOINTS.TRADING.PLACE_ORDER, orderData);
-    return response.data;
-  },
-
-  async getOrders(status?: string) {
-    const response = await apiClient.get(API_ENDPOINTS.TRADING.GET_ORDERS, {
-      params: status ? { status } : {},
-    });
-    return response.data;
-  },
-
-  async cancelOrder(orderId: string) {
-    const response = await apiClient.post(
-      API_ENDPOINTS.TRADING.CANCEL_ORDER.replace('{id}', orderId)
-    );
-    return response.data;
-  },
-
-  async getPositions() {
-    const response = await apiClient.get(API_ENDPOINTS.TRADING.GET_POSITIONS);
-    return response.data;
-  },
-
-  // Broker operations
-  async linkBrokerAccount(brokerData: {
-    broker_id: string;
-    cds_number: string;
-    password: string;
-    otp?: string;
-  }) {
-    const response = await apiClient.post(API_ENDPOINTS.BROKER.LINK_ACCOUNT, brokerData);
-    return response.data;
-  },
-
-  async submitKyc(kycData: {
-    broker_id: string;
-    full_name: string;
-    id_number: string;
-    kra_pin?: string;
-    phone_number?: string;
-    email?: string;
-    bank_account?: string;
-  }) {
-    const response = await apiClient.post(API_ENDPOINTS.BROKER.SUBMIT_KYC, kycData);
-    return response.data;
-  },
-
-  async getLinkedBrokers() {
-    const response = await apiClient.get(API_ENDPOINTS.BROKER.GET_ACCOUNTS);
-    return response.data;
-  },
-
-  // Community operations
-  async createPost(content: string) {
-    const response = await apiClient.post(API_ENDPOINTS.COMMUNITY.POSTS, { content });
-    return response.data;
-  },
-
-  async getPosts(limit = 20, offset = 0) {
-    const response = await apiClient.get(API_ENDPOINTS.COMMUNITY.POSTS, {
-      params: { limit, offset },
-    });
-    return response.data;
-  },
-
-  async likePost(postId: string) {
-    const response = await apiClient.post(
-      API_ENDPOINTS.COMMUNITY.LIKE_POST.replace('{id}', postId)
-    );
-    return response.data;
-  },
-
-  async followUser(userId: string) {
-    const response = await apiClient.post(
-      API_ENDPOINTS.COMMUNITY.FOLLOW_USER.replace('{id}', userId)
-    );
-    return response.data;
-  },
-
-  async unfollowUser(userId: string) {
-    const response = await apiClient.delete(
-      API_ENDPOINTS.COMMUNITY.FOLLOW_USER.replace('{id}', userId)
-    );
-    return response.data;
-  },
-
-  // Market data operations
-  async getStocks() {
-    const response = await apiClient.get(API_ENDPOINTS.MARKET.STOCKS);
-    return response.data;
-  },
-
-  async getMarketIndices() {
-    const response = await apiClient.get(API_ENDPOINTS.MARKET.INDICES);
-    return response.data;
-  },
-
-  async getStockDetail(symbol: string) {
-    const response = await apiClient.get(
-      API_ENDPOINTS.MARKET.STOCK_DETAIL.replace('{symbol}', symbol)
-    );
-    return response.data;
-  },
-
-  async getStockPrices(symbol: string) {
-    const response = await apiClient.get(
-      API_ENDPOINTS.MARKET.STOCK_PRICES.replace('{symbol}', symbol)
-    );
-    return response.data;
-  },
-
-  async getNews() {
-    const response = await apiClient.get(API_ENDPOINTS.MARKET.NEWS);
-    return response.data;
-  },
-
-  async getStockNews(symbol: string) {
-    const response = await apiClient.get(
-      API_ENDPOINTS.MARKET.STOCK_NEWS.replace('{symbol}', symbol)
-    );
-    return response.data;
-  },
-
-  async getMarketOverview() {
-    const response = await apiClient.get(API_ENDPOINTS.MARKET.OVERVIEW);
-    return response.data;
-  },
-
-  // Profile operations
-  async getProfile() {
-    const response = await apiClient.get(API_ENDPOINTS.PROFILE.GET);
-    return response.data;
-  },
-
-  async updateProfile(updates: any) {
-    const response = await apiClient.patch(API_ENDPOINTS.PROFILE.UPDATE, updates);
-    return response.data;
-  },
-
+  depositFunds: async (amount: number, method: string = 'bank_transfer') => (await apiClient.post(API_ENDPOINTS.PORTFOLIO.DEPOSIT, { amount, method })).data,
+  getCommunityUsers: async () => (await apiClient.get('/community/users/')).data,
+  getFollowedUsers: async () => (await apiClient.get('/community/users/followed/')).data,
+  withdrawFunds: async (amount: number, method: string = 'bank_transfer') => (await apiClient.post(API_ENDPOINTS.PORTFOLIO.WITHDRAW, { amount, method })).data,
+  getPortfolioSummary: async () => (await apiClient.get(API_ENDPOINTS.PORTFOLIO.GET_SUMMARY)).data,
+  getTransactions: async (limit = 50, offset = 0) => (await apiClient.get(API_ENDPOINTS.PORTFOLIO.TRANSACTIONS, { params: { limit, offset } })).data,
+  placeOrder: async (orderData: { symbol: string; quantity: number; order_type: 'market' | 'limit'; side: 'buy' | 'sell'; limit_price?: number }) => (await apiClient.post(API_ENDPOINTS.TRADING.PLACE_ORDER, orderData)).data,
+  getOrders: async (status?: string) => (await apiClient.get(API_ENDPOINTS.TRADING.GET_ORDERS, { params: status ? { status } : {} })).data,
+  cancelOrder: async (orderId: string) => (await apiClient.post(API_ENDPOINTS.TRADING.CANCEL_ORDER.replace('{id}', orderId))).data,
+  getPositions: async () => (await apiClient.get(API_ENDPOINTS.TRADING.GET_POSITIONS)).data,
+  linkBrokerAccount: async (brokerData: { broker_id: string; cds_number: string; password: string; otp?: string }) => (await apiClient.post(API_ENDPOINTS.BROKER.LINK_ACCOUNT, brokerData)).data,
+  submitKyc: async (kycData: { broker_id: string; full_name: string; id_number: string; kra_pin?: string; phone_number?: string; email?: string; bank_account?: string }) => (await apiClient.post(API_ENDPOINTS.BROKER.SUBMIT_KYC, kycData)).data,
+  getLinkedBrokers: async () => (await apiClient.get(API_ENDPOINTS.BROKER.GET_ACCOUNTS)).data,
+  createPost: async (content: string) => (await apiClient.post(API_ENDPOINTS.COMMUNITY.POSTS, { content })).data,
+  getPosts: async (limit = 20, offset = 0) => (await apiClient.get(API_ENDPOINTS.COMMUNITY.POSTS, { params: { limit, offset } })).data,
+  likePost: async (postId: string) => (await apiClient.post(API_ENDPOINTS.COMMUNITY.LIKE_POST.replace('{id}', postId))).data,
+  followUser: async (userId: string) => (await apiClient.post(API_ENDPOINTS.COMMUNITY.FOLLOW_USER.replace('{id}', userId))).data,
+  unfollowUser: async (userId: string) => (await apiClient.delete(API_ENDPOINTS.COMMUNITY.FOLLOW_USER.replace('{id}', userId))).data,
+  getStocks: async () => (await apiClient.get(API_ENDPOINTS.MARKET.STOCKS)).data,
+  getMarketIndices: async () => (await apiClient.get(API_ENDPOINTS.MARKET.INDICES)).data,
+  getStockDetail: async (symbol: string) => (await apiClient.get(API_ENDPOINTS.MARKET.STOCK_DETAIL.replace('{symbol}', symbol))).data,
+  getStockPrices: async (symbol: string) => (await apiClient.get(API_ENDPOINTS.MARKET.STOCK_PRICES.replace('{symbol}', symbol))).data,
+  getNews: async () => (await apiClient.get(API_ENDPOINTS.MARKET.NEWS)).data,
+  getStockNews: async (symbol: string) => (await apiClient.get(API_ENDPOINTS.MARKET.STOCK_NEWS.replace('{symbol}', symbol))).data,
+  getMarketOverview: async () => (await apiClient.get(API_ENDPOINTS.MARKET.OVERVIEW)).data,
+  getProfile: async () => (await apiClient.get(API_ENDPOINTS.PROFILE.GET)).data,
+  updateProfile: async (updates: any) => (await apiClient.patch(API_ENDPOINTS.PROFILE.UPDATE, updates)).data,
+  getBrokers: async () => (await apiClient.get(API_ENDPOINTS.BROKER.GET_BROKERS)).data,
+  getBrokerAccounts: async () => (await apiClient.get(API_ENDPOINTS.BROKER.GET_ACCOUNTS)).data,
+  getKycStatus: async () => (await apiClient.get(API_ENDPOINTS.BROKER.KYC_STATUS)).data,
+  placeBrokerOrder: async (accountId: string, symbol: string, quantity: number, orderType: string, side: string) => (await apiClient.post(API_ENDPOINTS.BROKER.PLACE_ORDER, { account_id: accountId, symbol, quantity, order_type: orderType, side })).data,
+  getBrokerOrders: async (accountId?: string) => (await apiClient.get(API_ENDPOINTS.BROKER.GET_ORDERS, { params: accountId ? { account_id: accountId } : {} })).data,
+  getBrokerBalance: async (accountId: string) => (await apiClient.get(API_ENDPOINTS.BROKER.GET_BALANCE.replace('{account_id}', accountId))).data,
+  syncBrokerAccount: async (accountId: string) => (await apiClient.post(API_ENDPOINTS.BROKER.SYNC_ACCOUNT.replace('{account_id}', accountId))).data,
   // Broker integration operations
-  async getBrokers() {
-    const response = await apiClient.get(API_ENDPOINTS.BROKER.GET_BROKERS);
-    return response.data;
-  },
 
-  async getBrokerAccounts() {
-    const response = await apiClient.get(API_ENDPOINTS.BROKER.GET_ACCOUNTS);
-    return response.data;
-  },
 
-  async getKycStatus() {
-    const response = await apiClient.get(API_ENDPOINTS.BROKER.KYC_STATUS);
-    return response.data;
-  },
 
-  async placeBrokerOrder(accountId: string, symbol: string, quantity: number, orderType: string, side: string) {
-    const response = await apiClient.post(API_ENDPOINTS.BROKER.PLACE_ORDER, {
-      account_id: accountId,
-      symbol,
-      quantity,
-      order_type: orderType,
-      side,
-    });
-    return response.data;
-  },
 
-  async getBrokerOrders(accountId?: string) {
-    const response = await apiClient.get(API_ENDPOINTS.BROKER.GET_ORDERS, {
-      params: accountId ? { account_id: accountId } : {},
-    });
-    return response.data;
-  },
 
-  async getBrokerBalance(accountId: string) {
-    const response = await apiClient.get(
-      API_ENDPOINTS.BROKER.GET_BALANCE.replace('{account_id}', accountId)
-    );
-    return response.data;
-  },
 
-  async syncBrokerAccount(accountId: string) {
-    const response = await apiClient.post(
-      API_ENDPOINTS.BROKER.SYNC_ACCOUNT.replace('{account_id}', accountId)
-    );
-    return response.data;
-  },
 };
 
 // Error handling utility
 export const handleApiError = (error: any) => {
-  if (error.response) {
+  if (error && error.response) {
     // Server responded with error status
     const message = error.response.data?.message || error.response.data?.error || 'An error occurred';
     return { message, status: error.response.status };
-  } else if (error.request) {
+  } else if (error && error.request) {
     // Request was made but no response received
     return { message: 'Network error. Please check your connection.', status: 0 };
-  } else {
+  } else if (error && error.message) {
     // Something else happened
-    return { message: error.message || 'An unexpected error occurred', status: 0 };
+    return { message: error.message, status: 0 };
+  } else {
+    // Unknown error type
+    return { message: 'An unexpected error occurred', status: 0 };
   }
 };

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useMarketData } from '../hooks/useMarketData';

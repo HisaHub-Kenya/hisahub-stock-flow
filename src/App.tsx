@@ -1,11 +1,11 @@
 
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "./components/ui/sonner";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useState, useEffect, Suspense, lazy } from "react";
-import { getCurrentUser } from "@/lib/auth";
-import { Skeleton } from "@/components/ui/skeleton";
+import { getCurrentUser } from "./lib/auth";
+import { Skeleton } from "./components/ui/skeleton";
 
 // Critical routes loaded immediately
 import Index from "./pages/Index";
