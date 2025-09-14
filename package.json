@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
-    "type-check": "tsc --noEmit"
+    "seed-auth": "node ./scripts/seed-auth.js",
+  "type-check": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -70,6 +71,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+  "puppeteer": "^20.8.0",
     "@eslint/js": "^9.9.0",
     "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^22.18.1",

@@ -260,12 +260,12 @@ export const FinancialDataProvider: React.FC<{ children: ReactNode }> = ({ child
   const contextValue: FinancialDataContextType = {
     state,
     dispatch,
-    placeOrder: async (symbol: string, quantity: number, orderType = 'market') => {
+  placeOrder: async (symbol: string, quantity: number, orderType: 'market' | 'limit' = 'market') => {
       try {
         const success = await apiHelpers.placeOrder({
           symbol,
           quantity,
-          order_type: orderType,
+          order_type: orderType as 'market' | 'limit',
           side: quantity > 0 ? 'buy' : 'sell'
         });
         if (success) {

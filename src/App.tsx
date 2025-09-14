@@ -40,16 +40,16 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
-  const { user, isAuthenticated, setUser, syncAuthState, loadPortfolioData, loadMarketData } = useAppStore();
+  const { user, isAuthenticated, isAuthChecked, setUser, syncAuthState, loadPortfolioData, loadMarketData } = useAppStore();
 
   const handleSplashComplete = () => {
     setShowSplash(false);
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     // Sync auth state after login
-    syncAuthState();
-    if (isAuthenticated) {
+    const ok = await syncAuthState();
+    if (ok) {
       // Load data after successful login
       loadPortfolioData();
       loadMarketData();
@@ -58,13 +58,16 @@ const App = () => {
 
   useEffect(() => {
     // Sync auth state on app load
-    syncAuthState();
-    if (isAuthenticated) {
-      // Load data if user is already authenticated
-      loadPortfolioData();
-      loadMarketData();
-    }
-  }, [syncAuthState, loadPortfolioData, loadMarketData, isAuthenticated]);
+    let mounted = true;
+    (async () => {
+      const ok = await syncAuthState();
+      if (mounted && ok) {
+        loadPortfolioData();
+        loadMarketData();
+      }
+    })();
+    return () => { mounted = false; };
+  }, [syncAuthState, loadPortfolioData, loadMarketData]);
 
   if (showSplash) {
     return <SplashScreen onComplete={handleSplashComplete} />;
@@ -81,7 +84,7 @@ const App = () => {
               <Route path="/auth" element={<Auth onLogin={handleLogin} />} />
               
               {/* Protected routes - only accessible to authenticated users */}
-              {isAuthenticated ? (
+              {isAuthChecked && isAuthenticated ? (
                 <>
                   <Route path="/" element={<Index />} />
                   <Route path="/trade" element={
@@ -126,8 +129,13 @@ const App = () => {
                   } />
                 </>
               ) : (
-                // Redirect all routes to auth if not authenticated
-                <Route path="*" element={<Navigate to="/auth" replace />} />
+                // If auth check completed and not authenticated, redirect all routes to auth
+                isAuthChecked ? (
+                  <Route path="*" element={<Navigate to="/auth" replace />} />
+                ) : (
+                  // If auth check not yet completed, show loader to avoid flash redirect
+                  <Route path="*" element={<PageLoader />} />
+                )
               )}
             </Routes>
             {/* Show PWA install prompt only when user is authenticated */}

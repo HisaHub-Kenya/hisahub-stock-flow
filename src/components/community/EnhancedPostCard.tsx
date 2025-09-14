@@ -14,6 +14,12 @@ export interface Post {
     first_name: string | null;
     last_name: string | null;
   };
+  // Optional fields used elsewhere in the UI
+  profiles?: {
+    first_name?: string | null;
+    last_name?: string | null;
+  };
+  replies_count?: number;
   is_liked: boolean;
   likes_count: number;
   comments_count: number;

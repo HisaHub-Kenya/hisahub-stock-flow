@@ -16,6 +16,7 @@ export interface Post {
   };
   is_liked: boolean;
   likes_count: number;
+  replies_count?: number;
   comments_count: number;
 };
 

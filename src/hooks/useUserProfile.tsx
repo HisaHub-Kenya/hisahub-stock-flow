@@ -13,6 +13,12 @@ export interface UserProfile {
   profile_picture?: string;
   created_at: string;
   updated_at: string;
+  // Extended optional fields used in UI
+  role?: string;
+  account_status?: string;
+  national_id?: string;
+  biometric_enabled?: boolean;
+  risk_tolerance?: number;
 }
 
 export const useUserProfile = () => {

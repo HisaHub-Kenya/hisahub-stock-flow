@@ -14,6 +14,9 @@ export interface UserProfile {
   followers_count?: number;
   following_count?: number;
   posts_count?: number;
+  // optional UI fields
+  role?: string;
+  account_status?: string;
 }
 
 interface UserProfileCardProps {

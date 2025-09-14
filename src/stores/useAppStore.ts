@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiHelpers, handleApiError } from '../lib/api';
 import { toast } from 'sonner';
-import { getCurrentUser, isAuthenticated as checkAuth } from '../lib/auth';
+import { getCurrentUser, getValidToken } from '../lib/auth';
 
 // Types
 export interface User {
@@ -87,6 +87,7 @@ interface AppState {
   // User & Auth
   user: User | null;
   isAuthenticated: boolean;
+  isAuthChecked: boolean;
   isLoading: boolean;
   
   // Portfolio & Trading
@@ -132,6 +133,7 @@ interface AppState {
   
   // Utility Actions
   refreshAllData: () => Promise<void>;
+  syncAuthState: () => Promise<boolean>;
   logAnalytics: (action: string, data?: any) => void;
 }
 
@@ -285,9 +287,10 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       // Initial state
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
+  user: null,
+  isAuthenticated: false,
+  isAuthChecked: false,
+  isLoading: false,
       portfolioData: {
         totalValue: 5110.00,
         cashBalance: 500.00,
@@ -310,13 +313,18 @@ export const useAppStore = create<AppState>()(
         user, 
         isAuthenticated: !!user && user.is_authenticated 
       }),
-      syncAuthState: () => {
-        const currentUser = getCurrentUser();
-        const isAuth = checkAuth();
-        set({ 
-          user: currentUser, 
-          isAuthenticated: isAuth 
-        });
+      syncAuthState: async () => {
+        try {
+          // Ensure token is valid (refresh if needed)
+          const token = await getValidToken();
+          const currentUser = getCurrentUser();
+          const isAuth = !!token && !!currentUser && currentUser.is_authenticated;
+          set({ user: currentUser, isAuthenticated: isAuth, isAuthChecked: true });
+          return isAuth;
+        } catch (err) {
+          set({ user: null, isAuthenticated: false, isAuthChecked: true });
+          return false;
+        }
       },
       setLoading: (isLoading) => set({ isLoading }),
       updatePortfolioData: (data) => set((state) => ({

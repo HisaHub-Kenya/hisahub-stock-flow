@@ -89,6 +89,7 @@ export const useCommunity = () => {
     toggleLike,
     followUser,
     unfollowUser,
+    getUserPosts: fetchPosts,
     refetch: fetchPosts,
   };
 };
