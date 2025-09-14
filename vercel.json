@@ -36,5 +36,9 @@
   ],
   "env": {
     "VITE_API_URL": "http://localhost:8000/api"
-  }
+  },
+  "ignore": [
+    "src/__tests__/**",
+    "**/*.test.*"
+  ]
 }
