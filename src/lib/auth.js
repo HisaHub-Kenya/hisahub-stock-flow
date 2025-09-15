@@ -104,14 +104,21 @@ var AuthManager = /** @class */ (function () {
                             })];
                     case 1:
                         response = _a.sent();
-                        if (!!response.ok) return [3 /*break*/, 3];
-                        return [4 /*yield*/, response.json()];
-                    case 2:
-                        errorData = _a.sent();
-                        throw new Error(errorData.detail || 'Login failed');
-                    case 3: return [4 /*yield*/, response.json()];
-                    case 4:
-                        data = _a.sent();
+                        if (!response.ok) {
+                            let errorData;
+                            try {
+                                errorData = await response.json();
+                            } catch (e) {
+                                errorData = { detail: 'Login failed (invalid JSON response)' };
+                            }
+                            throw new Error(errorData.detail || 'Login failed');
+                        }
+                        let data;
+                        try {
+                            data = await response.json();
+                        } catch (e) {
+                            data = { tokens: null, user: null };
+                        }
                         this.saveTokens(data.tokens);
                         this.saveUser(data.user);
                         return [2 /*return*/, data];
