@@ -50,11 +50,15 @@ export var testDjangoConnection = function () { return __awaiter(void 0, void 0,
             case 1:
                 response = _a.sent();
                 if (!response.ok) return [3 /*break*/, 3];
-                return [4 /*yield*/, response.json()];
-            case 2:
-                data = _a.sent();
-                console.log('✅ Django backend connection successful:', data);
-                return [2 /*return*/, { success: true, data: data }];
+                return response.json()
+                    .then(function(data) {
+                        console.log('✅ Django backend connection successful:', data);
+                        return { success: true, data: data };
+                    })
+                    .catch(function() {
+                        console.log('✅ Django backend connection successful: {}');
+                        return { success: true, data: {} };
+                    });
             case 3:
                 console.error('❌ Django backend connection failed:', response.status, response.statusText);
                 return [2 /*return*/, { success: false, error: "HTTP ".concat(response.status, ": ").concat(response.statusText) }];
@@ -101,13 +105,27 @@ export var testAllEndpoints = function () { return __awaiter(void 0, void 0, voi
                     })];
             case 3:
                 response = _a.sent();
-                results.push({
-                    name: endpoint.name,
-                    url: endpoint.url,
-                    status: response.status,
-                    success: response.ok,
-                    auth_required: endpoint.auth,
-                });
+                return response.json()
+                    .then(function(respData) {
+                        results.push({
+                            name: endpoint.name,
+                            url: endpoint.url,
+                            status: response.status,
+                            success: response.ok,
+                            auth_required: endpoint.auth,
+                            data: respData
+                        });
+                    })
+                    .catch(function() {
+                        results.push({
+                            name: endpoint.name,
+                            url: endpoint.url,
+                            status: response.status,
+                            success: response.ok,
+                            auth_required: endpoint.auth,
+                            data: {}
+                        });
+                    });
                 return [3 /*break*/, 5];
             case 4:
                 error_2 = _a.sent();
