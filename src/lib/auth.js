@@ -105,23 +105,25 @@ var AuthManager = /** @class */ (function () {
                     case 1:
                         response = _a.sent();
                         if (!response.ok) {
-                            let errorData;
-                            try {
-                                errorData = await response.json();
-                            } catch (e) {
-                                errorData = { detail: 'Login failed (invalid JSON response)' };
-                            }
-                            throw new Error(errorData.detail || 'Login failed');
+                            return response.json()
+                                .then(function(errorData) {
+                                    throw new Error(errorData.detail || 'Login failed');
+                                })
+                                .catch(function() {
+                                    throw new Error('Login failed (invalid JSON response)');
+                                });
                         }
-                        let data;
-                        try {
-                            data = await response.json();
-                        } catch (e) {
-                            data = { tokens: null, user: null };
-                        }
-                        this.saveTokens(data.tokens);
-                        this.saveUser(data.user);
-                        return [2 /*return*/, data];
+                        return response.json()
+                            .then(function(data) {
+                                this.saveTokens(data.tokens);
+                                this.saveUser(data.user);
+                                return data;
+                            }.bind(this))
+                            .catch(function() {
+                                this.saveTokens(null);
+                                this.saveUser(null);
+                                return { tokens: null, user: null };
+                            }.bind(this));
                 }
             });
         });
