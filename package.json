@@ -7,14 +7,13 @@
   "dev": "vite",
   "build": "vite build",
   "build:dev": "vite build --mode development",
-  "build:apk": "npm run build && npm run preview",
+  "build:apk": "npm run build",
   "build:vercel": "npm run build",
-  "lint": "eslint .",
   "lint:fix": "eslint . --fix",
   "preview": "vite preview",
   "seed-auth": "node ./scripts/seed-auth.js",
-  "type-check": "tsc --noEmit -p tsconfig.app.json",
-  "postinstall": "npm install --legacy-peer-deps"
+  "type-check": "tsc --noEmit -p tsconfig.app.json"
+  // ...existing code...
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
