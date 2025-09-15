@@ -68,13 +68,22 @@ export var useMarketData = function () {
                     return [4 /*yield*/, apiHelpers.getStocks()];
                 case 1:
                     data = _a.sent();
-                    if (data) {
+                    if (data && Array.isArray(data)) {
                         setStocks(data);
+                    } else if (data && data.status === 401) {
+                        console.error('Unauthorized: Please log in to view stock prices.');
+                    } else {
+                        setStocks([]);
                     }
                     return [3 /*break*/, 3];
                 case 2:
                     error_1 = _a.sent();
-                    console.error('Error fetching stock prices:', error_1);
+                    if (error_1 && error_1.response && error_1.response.status === 401) {
+                        console.error('Unauthorized: Please log in to view stock prices.');
+                    } else {
+                        console.error('Error fetching stock prices:', error_1);
+                    }
+                    setStocks([]);
                     return [3 /*break*/, 3];
                 case 3: return [2 /*return*/];
             }
@@ -89,13 +98,22 @@ export var useMarketData = function () {
                     return [4 /*yield*/, apiHelpers.getMarketIndices()];
                 case 1:
                     data = _a.sent();
-                    if (data) {
+                    if (data && Array.isArray(data)) {
                         setMarketIndices(data);
+                    } else if (data && data.status === 401) {
+                        console.error('Unauthorized: Please log in to view market indices.');
+                    } else {
+                        setMarketIndices([]);
                     }
                     return [3 /*break*/, 3];
                 case 2:
                     error_2 = _a.sent();
-                    console.error('Error fetching market indices:', error_2);
+                    if (error_2 && error_2.response && error_2.response.status === 401) {
+                        console.error('Unauthorized: Please log in to view market indices.');
+                    } else {
+                        console.error('Error fetching market indices:', error_2);
+                    }
+                    setMarketIndices([]);
                     return [3 /*break*/, 3];
                 case 3: return [2 /*return*/];
             }
