@@ -126,14 +126,23 @@ class AuthManager {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Login failed');
+        let errorData = {};
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { detail: 'Login failed (invalid JSON response)' };
+        }
+        throw new Error((errorData as any).detail || 'Login failed');
       }
 
-      const data = await response.json();
+      let data: any = {};
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = { tokens: null, user: null };
+      }
       this.saveTokens(data.tokens);
       this.saveUser(data.user);
-      
       return data;
     } catch (error) {
       // If API call fails, fall back to mock authentication for demo
