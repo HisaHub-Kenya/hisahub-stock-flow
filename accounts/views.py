@@ -6,13 +6,15 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.parsers import MultiPartParser
 from firebase_admin import auth
 
-from .models import FirebaseUser, UserProfile, BrokerProfile
+from .models import User, UserProfile, BrokerProfile
 from .serializers import SignUpSerializer,KYCSerializer, KYCApprovalSerializer
 from django.db import IntegrityError
 from rest_framework.permissions import IsAuthenticated
 from .models import BrokerVerification
 from .serializers import BrokerVerificationSerializer
 from rest_framework import permissions, generics, status
+from django.utils import timezone
+
 #  User SignUp View
 class SignUpView(APIView):
     def post(self, request):
@@ -181,4 +183,30 @@ class ApproveKYCView(APIView):
 
         except UserProfile.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+class VerifyingBrokerView(APIView):
+    """
+    Admin-only endpoint to mark a broker as verified.
+    URL: /verify-broker/<uid>/
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request, uid):
+        try:
+            broker = BrokerProfile.objects.get(firebase_user__uid=uid)
+        except BrokerProfile.DoesNotExist:
+            return Response(
+                {"error": "Broker not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        broker.verified = True
+        broker.save(update_fields=["verified"])
+
+        return Response(
+            {
+                "message": f"Broker {broker.full_name} verified successfully",
+                "verified_at": timezone.now().isoformat(),
+            },
+            status=status.HTTP_200_OK
+        )
 CurrentUserView= CurrentUserView.as_view()

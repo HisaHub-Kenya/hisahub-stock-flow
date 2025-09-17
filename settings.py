@@ -36,9 +36,12 @@ INSTALLED_APPS = [
     'accounts',
     'stocks',
     'payments',
+    'channels',
     'news',
-    'trading',
-    'chat_App',
+    'Trading.apps.TradingConfig',
+    'portfolio',
+    'analytics',
+    'orders',
 ]
 # Celery configuration
 
@@ -96,8 +99,8 @@ TEMPLATES = [
     },
 ]
 
-# aSGI
-ASGI_APPLICATION = 'Backend.wsgi.application'
+# WSGI
+WSGI_APPLICATION = 'Backend.wsgi.application'
 
 # Database configuration (PostgreSQL)
 DATABASES = {
@@ -113,7 +116,9 @@ DATABASES = {
 
 # Default auto field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
- 
+
+# Use custom User model from accounts app
+AUTH_USER_MODEL = 'accounts.User'
 
 
 # Password validators

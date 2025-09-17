@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import FirebaseUser, UserProfile, BrokerProfile, StockTrade , KYC , BrokerVerification
+from .models import User, UserProfile, BrokerProfile, StockTrade , KYC , BrokerVerification
 
 class SignUpSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -10,9 +10,9 @@ class SignUpSerializer(serializers.Serializer):
     company_name = serializers.CharField(required=False, allow_blank=True)
     license_id = serializers.CharField(required=False, allow_blank=True)
 
-class FirebaseUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = FirebaseUser
+        model = User
         fields = ['uid', 'email', 'display_name', 'created_at']
         
 class UserProfileSerializer(serializers.ModelSerializer):
