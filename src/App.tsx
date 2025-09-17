@@ -1,142 +1,143 @@
-/* ===============================
-   /src/integrations/firebase/client.ts
-   =============================== */
 
-   import { initializeApp } from "firebase/app";
-   import { getAuth } from "firebase/auth";
-   
-   const firebaseConfig = {
-     apiKey: "YOUR_API_KEY",
-     authDomain: "your-project.firebaseapp.com",
-     projectId: "your-project-id",
-   };
-   
-   const app = initializeApp(firebaseConfig);
-   export const auth = getAuth(app);
-   
-   
-   /* ===============================
-      /src/App.tsx
-      =============================== */
-   
-   import { Toaster } from "@/components/ui/sonner";
-   import { TooltipProvider } from "@/components/ui/tooltip";
-   import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-   import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-   import { useState, useEffect } from "react";
-   import { onAuthStateChanged, getIdToken, User as FirebaseUser } from "firebase/auth";
-   import { auth } from "@/integrations/firebase/client";
-   
-   import Index from "./pages/Index";
-   import Trade from "./pages/Trade";
-   import Portfolio from "./pages/Portfolio";
-   import News from "./pages/News";
-   import Community from "./pages/Community";
-   import Settings from "./pages/Settings";
-   import Auth from "./pages/Auth";
-   import BrokerIntegration from "./pages/BrokerIntegration";
-   import Chatbot from "./pages/Chatbot";
-   import NotFound from "./pages/NotFound";
-   import { ThemeProvider } from "./components/ThemeProvider";
-   import { FinancialDataProvider } from "./contexts/FinancialDataContext";
-   import SplashScreen from "./components/SplashScreen";
-   
-   const queryClient = new QueryClient();
-   
-   const App = () => {
-     const [showSplash, setShowSplash] = useState(true);
-     const [user, setUser] = useState<FirebaseUser | null>(null);
-     const [token, setToken] = useState<string | null>(null);
-     const [loading, setLoading] = useState(true);
-   
-     const handleSplashComplete = () => {
-       setShowSplash(false);
-     };
-   
-     const handleLogin = () => {};
-   
-     useEffect(() => {
-       const unsubscribe = onAuthStateChanged(auth, async (user) => {
-         setUser(user);
-         const idToken = user ? await getIdToken(user) : null;
-         setToken(idToken);
-         setLoading(false);
-       });
-   
-       return () => unsubscribe();
-     }, []);
-   
-     const sendToDjangoAPI = async () => {
-       if (!token || !user) return;
-   
-       const res = await fetch("http://localhost:8000/api/auth/signup/", {
-         method: "POST",
-         headers: {
-           Authorization: `Bearer ${token}`,
-           "Content-Type": "application/json",
-         },
-         body: JSON.stringify({
-           email: user.email,
-           display_name: user.displayName || "",
-         }),
-       });
-   
-       if (!res.ok) {
-         console.error("Failed to sync with backend", await res.json());
-       }
-     };
-   
-     useEffect(() => {
-       sendToDjangoAPI();
-     }, [token, user]);
-   
-     if (loading) {
-       return (
-         <div className="min-h-screen bg-primary flex items-center justify-center">
-           <div className="text-off-white">Loading...</div>
-         </div>
-       );
-     }
-   
-     return (
-       <QueryClientProvider client={queryClient}>
-         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-           <TooltipProvider>
-             <Toaster />
-             <BrowserRouter>
-               {showSplash ? (
-                 <SplashScreen onComplete={handleSplashComplete} />
-               ) : (
-                 <FinancialDataProvider>
-                   <Routes>
-                     {user ? (
-                       <>
-                         <Route path="/" element={<Index />} />
-                         <Route path="/trade" element={<Trade />} />
-                         <Route path="/portfolio" element={<Portfolio />} />
-                         <Route path="/news" element={<News />} />
-                         <Route path="/community" element={<Community />} />
-                         <Route path="/settings" element={<Settings />} />
-                         <Route path="/broker-integration" element={<BrokerIntegration />} />
-                         <Route path="/chatbot" element={<Chatbot />} />
-                         <Route path="/auth" element={<Navigate to="/" replace />} />
-                       </>
-                     ) : (
-                       <>
-                         <Route path="/auth" element={<Auth onLogin={handleLogin} />} />
-                         <Route path="*" element={<Navigate to="/auth" replace />} />
-                       </>
-                     )}
-                     <Route path="*" element={<NotFound />} />
-                   </Routes>
-                 </FinancialDataProvider>
-               )}
-             </BrowserRouter>
-           </TooltipProvider>
-         </ThemeProvider>
-       </QueryClientProvider>
-     );
-   };
-   
-   export default App;
-   
+import { Toaster } from "./components/ui/sonner";
+import { TooltipProvider } from "./components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { useState, useEffect, Suspense, lazy } from "react";
+import { getCurrentUser } from "./lib/auth";
+import { Skeleton } from "./components/ui/skeleton";
+
+// Critical routes loaded immediately
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+
+// Non-critical routes loaded lazily
+const Trade = lazy(() => import("./pages/Trade"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const News = lazy(() => import("./pages/News"));
+const Community = lazy(() => import("./pages/Community"));
+const Settings = lazy(() => import("./pages/Settings"));
+const BrokerIntegration = lazy(() => import("./pages/BrokerIntegration"));
+const Chatbot = lazy(() => import("./pages/Chatbot"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+// Loading component
+const PageLoader = () => (
+  <div className="min-h-screen bg-primary flex items-center justify-center">
+    <div className="space-y-4 w-full max-w-md">
+      <Skeleton className="h-12 w-full bg-white/10" />
+      <Skeleton className="h-32 w-full bg-white/10" />
+      <Skeleton className="h-8 w-3/4 bg-white/10" />
+    </div>
+  </div>
+);
+import { ThemeProvider } from "./components/ThemeProvider";
+import { useAppStore } from "./stores/useAppStore";
+import SplashScreen from "./components/SplashScreen";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import { FinancialDataProvider } from './contexts/FinancialDataContext';
+
+const queryClient = new QueryClient();
+
+const AppRouter = () => {
+  const navigate = useNavigate();
+  const { user, isAuthenticated, isAuthChecked, authSyncError, syncAuthState, loadPortfolioData, loadMarketData } = useAppStore();
+
+  const handleLogin = async () => {
+    const ok = await syncAuthState();
+    if (ok) {
+      loadPortfolioData();
+      loadMarketData();
+      console.log('[AppRouter] login successful — navigating to /');
+      try { navigate('/', { replace: true }); } catch (e) { console.warn('[AppRouter] navigation after login failed', e); }
+    }
+  };
+
+  useEffect(() => {
+    console.log('[AppRouter] auth state change', { isAuthenticated, isAuthChecked, userId: user?.id, authSyncError });
+  }, [isAuthenticated, isAuthChecked, user?.id, authSyncError]);
+
+  return (
+    <>
+      <Routes>
+        <Route path="/auth" element={<Auth onLogin={handleLogin} />} />
+
+        {isAuthChecked && !authSyncError && isAuthenticated ? (
+          <>
+            <Route path="/" element={<Index />} />
+            <Route path="/trade" element={<Suspense fallback={<PageLoader />}><Trade /></Suspense>} />
+            <Route path="/portfolio" element={<Suspense fallback={<PageLoader />}><Portfolio /></Suspense>} />
+            <Route path="/news" element={<Suspense fallback={<PageLoader />}><News /></Suspense>} />
+            <Route path="/community" element={<Suspense fallback={<PageLoader />}><Community /></Suspense>} />
+            <Route path="/settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
+            <Route path="/broker-integration" element={<Suspense fallback={<PageLoader />}><BrokerIntegration /></Suspense>} />
+            <Route path="/chatbot" element={<Suspense fallback={<PageLoader />}><Chatbot /></Suspense>} />
+            <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
+          </>
+        ) : (
+          isAuthChecked && !authSyncError ? (
+            <Route path="*" element={<Navigate to="/auth" replace />} />
+          ) : authSyncError ? (
+            <Route path="*" element={
+              <div className="min-h-screen bg-primary flex items-center justify-center">
+                <div className="text-center max-w-md">
+                  <h2 className="text-2xl text-white mb-4">Connection Problem</h2>
+                  <p className="text-gray-300 mb-6">We couldn't validate your session with the server. This may be a temporary network issue.</p>
+                  <div className="flex gap-4 justify-center">
+                    <button className="px-4 py-2 bg-secondary text-primary rounded" onClick={() => syncAuthState()}>Retry</button>
+                    <a className="px-4 py-2 bg-white/10 text-white rounded" href="/auth">Sign in manually</a>
+                  </div>
+                </div>
+              </div>
+            } />
+          ) : (
+            <Route path="*" element={<PageLoader />} />
+          )
+        )}
+      </Routes>
+      {isAuthenticated && <PWAInstallPrompt />}
+    </>
+  );
+};
+
+const App = () => {
+  const [showSplash, setShowSplash] = useState(true);
+  const { syncAuthState, loadPortfolioData, loadMarketData } = useAppStore();
+
+  const handleSplashComplete = () => setShowSplash(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      console.log('[App] starting auth check');
+      const ok = await syncAuthState();
+      console.log('[App] auth check complete', { ok });
+      if (mounted && ok) {
+        loadPortfolioData();
+        loadMarketData();
+      }
+    })();
+    return () => { mounted = false; };
+  }, [syncAuthState, loadPortfolioData, loadMarketData]);
+
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+        <TooltipProvider>
+          <Toaster />
+          <BrowserRouter>
+            <FinancialDataProvider>
+              <AppRouter />
+            </FinancialDataProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
+
+export default App;

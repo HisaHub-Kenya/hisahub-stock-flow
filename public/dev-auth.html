@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>HisaHub — Dev Auth Seed</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; padding: 2rem; }
+      .box { max-width: 640px; margin: 2rem auto; border: 1px solid #e5e7eb; padding: 1.5rem; border-radius: 8px; }
+      button { background:#0ea5e9; color:white; border:none; padding:0.6rem 1rem; border-radius:6px; cursor:pointer }
+      pre { background:#111827; color:#d1d5db; padding:1rem; border-radius:6px; overflow:auto }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>HisaHub — Dev Auth Seed</h1>
+      <p>This page seeds <code>localStorage</code> with mock authentication tokens and a demo user so you can preview authenticated routes without a backend.</p>
+
+      <p><strong>Note:</strong> This is a development helper — do not commit similar behavior into production code.</p>
+
+      <div style="margin:1rem 0">
+        <button id="seedBtn">Seed Auth & Open App</button>
+      </div>
+
+      <h3>What will be set</h3>
+      <pre id="preview">(preview will appear here)</pre>
+    </div>
+
+    <script>
+      function seedAuth() {
+        const user = {
+          id: 'dev-user-1',
+          email: 'demo@hisahub.test',
+          first_name: 'Demo',
+          last_name: 'User',
+          is_authenticated: true
+        };
+
+        const tokens = {
+          access: 'mock_access_token_' + Date.now(),
+          refresh: 'mock_refresh_token_' + Date.now()
+        };
+
+        try {
+          localStorage.setItem('access_token', tokens.access);
+          localStorage.setItem('refresh_token', tokens.refresh);
+          localStorage.setItem('user', JSON.stringify(user));
+
+          document.getElementById('preview').textContent = JSON.stringify({ user, tokens }, null, 2);
+
+          // small delay so the preview updates before redirect
+          setTimeout(() => {
+            // Redirect to root of app
+            window.location.href = '/';
+          }, 600);
+        } catch (e) {
+          alert('Unable to write to localStorage: ' + e);
+        }
+      }
+
+      document.getElementById('seedBtn').addEventListener('click', seedAuth);
+
+      // Also show a preview of the seed values before clicking
+      const previewUser = {
+        id: 'dev-user-1',
+        email: 'demo@hisahub.test',
+        first_name: 'Demo',
+        last_name: 'User',
+        is_authenticated: true
+      };
+      const previewTokens = { access: 'mock_access_token_<ts>', refresh: 'mock_refresh_token_<ts>' };
+      document.getElementById('preview').textContent = JSON.stringify({ user: previewUser, tokens: previewTokens }, null, 2);
+    </script>
+  </body>
+</html>

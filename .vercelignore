@@ -1,0 +1,21 @@
+# Ignore files and folders not needed for Vercel deployment
+node_modules/
+.vscode/
+__tests__/
+tests/
+docs/*.md
+*.mp4
+*.mov
+*.avi
+*.zip
+*.tar
+*.rar
+*.7z
+*.log
+*.env
+scripts/
+*.ps1
+*.sh
+*.bak
+*.tmp
+*.DS_Store

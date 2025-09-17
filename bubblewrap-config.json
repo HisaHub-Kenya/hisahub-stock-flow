@@ -1,0 +1,37 @@
+{
+  "manifestUrl": "https://your-vercel-app.vercel.app/manifest.webmanifest",
+  "host": "https://your-vercel-app.vercel.app",
+  "name": "HisaHub - AI-Powered NSE Trading Platform",
+  "short_name": "HisaHub",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#22c55e",
+  "description": "Democratizing access to the Nairobi Securities Exchange with AI-powered trading tools and real-time market data",
+  "icons": [
+    {
+      "src": "/lovable-uploads/d119c8de-4cb2-4d81-b0c7-5c63f121873d.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/d119c8de-4cb2-4d81-b0c7-5c63f121873d.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "categories": ["finance", "productivity", "business"],
+  "bubblewrap": {
+    "packageId": "com.hisahub.pwa",
+    "launcherName": "HisaHub",
+    "versionCode": 1,
+    "versionName": "1.0.0",
+    "signing": {
+      "useKeystore": false
+    }
+  }
+}
