@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'stocks',
     'payments',
     'news',
-    'Trading',
+    'trading',
     'chat_App',
 ]
 # Celery configuration
@@ -182,9 +182,6 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = 'static/'
-
-AUTH_USER_MODEL = 'accounts.User'
-
 
 # Default auto field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

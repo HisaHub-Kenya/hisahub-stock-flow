@@ -19,7 +19,7 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),
     path('api/stocks/', include('stocks.urls')),
     path('api/payments/', include('payments.urls')),
-    path('api/Trading/', include('Trading.urls')),
+    path('api/trading/', include('trading.urls')),
     path('api/news/', include('news.urls')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]

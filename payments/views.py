@@ -5,7 +5,6 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .stripe import transfer_to_card
 
-
 from .models import Transaction
 from .stripe import create_card_payment
 from .mpesa import lipa_na_mpesa
