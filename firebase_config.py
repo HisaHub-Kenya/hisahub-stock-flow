@@ -1,8 +1,10 @@
 
+
+# firebase_config.py for Django: Firebase init from env var only
 import os
 import json
 import firebase_admin
-from firebase_admin import credentials, initialize_app
+from firebase_admin import credentials
 
 firebase_key_json = os.environ.get('FIREBASE_SERVICE_KEY')
 if not firebase_key_json:
