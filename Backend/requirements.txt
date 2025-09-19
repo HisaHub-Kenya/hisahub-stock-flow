@@ -1,5 +1,12 @@
-firebase-admin
-flask
+django
 gunicorn
+psycopg2-binary
+django-cors-headers
+channels
+channels-redis
+firebase-admin
 python-dotenv
 requests
+celery
+pillow
+drf-yasg

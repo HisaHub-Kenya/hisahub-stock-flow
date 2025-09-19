@@ -1,9 +1,26 @@
+# Debug logging configuration
+# Logs to both console and debug.log file for robust error tracking
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": "debug.log",
+            "level": "DEBUG",
+        },
+    },
+    "root": {"handlers": ["console", "file"], "level": "DEBUG"},
+}
 """
 Django settings for Backend project.
 """
 
+
 from decouple import config
 import os
+os.environ["PYTHONZONEINFO_TZPATH"] = "C:/Users/Ian/AppData/Local/Programs/Python/Python313/Lib/zoneinfo/tzdata"
 from pathlib import Path
 
 
@@ -16,6 +33,8 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = []
 
 # Firebase
+
+# Base directory
 FIREBASE_CREDENTIAL_PATH = config('FIREBASE_CREDENTIAL_PATH')  # Used in firebase.py
 
 # Installed apps
@@ -30,15 +49,16 @@ INSTALLED_APPS = [
 
     # Third-party apps
     'rest_framework',
-    'django_celery_beat',
+    # 'django_celery_beat',
 
     # Local apps
     'accounts',
     'stocks',
     'payments',
     'news',
-    'trading',
+    'Trading',
     'chat_App',
+    'corsheaders',
 ]
 # Celery configuration
 
@@ -66,8 +86,9 @@ REST_FRAMEWORK = {
 }
 
 
-# Middleware
+# Global exception middleware must be first to catch all errors
 MIDDLEWARE = [
+    'Backend.middleware.error_handler.GlobalExceptionMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -124,13 +145,16 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-    "LOCATION": "redis://127.0.0.1:6379/1",
-
+        "LOCATION": "redis://127.0.0.1:6379/1",
     }
 }
+
+# CORS settings for testing
+CORS_ALLOW_ALL_ORIGINS = True  # For testing only! Use CORS_ALLOWED_ORIGINS in production.
 
 # mpesa cofigurations   
 
@@ -183,15 +207,13 @@ USE_TZ = True
 # Static files
 STATIC_URL = 'static/'
 
-# Default auto field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
-
-sentry_sdk.init(
-    dsn=config('SENTRY_DSN', default=''),
-    integrations=[DjangoIntegration()],
-    traces_sample_rate=1.0,
-    send_default_pii=True,
-)
+# Sentry integration temporarily disabled for debugging
+# import sentry_sdk
+# from sentry_sdk.integrations.django import DjangoIntegration
+# sentry_sdk.init(
+#     dsn=config('SENTRY_DSN', default=''),
+#     integrations=[DjangoIntegration()],
+#     traces_sample_rate=1.0,
+#     send_default_pii=True,
+# )

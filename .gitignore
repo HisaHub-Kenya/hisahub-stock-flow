@@ -37,6 +37,9 @@ __pycache__/
 env/
 ENV/
 *.env
+.env
+Backend/.env
+src/.env*
 
 # Django
 db.sqlite3

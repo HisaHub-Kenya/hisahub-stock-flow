@@ -2,6 +2,14 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+import faulthandler
+import logging
+faulthandler.enable()
+logging.basicConfig(filename='dev-backend.log', level=logging.DEBUG)
+import faulthandler
+import logging
+faulthandler.enable()
+logging.basicConfig(filename='dev-backend.log', level=logging.DEBUG)
 
 
 def main():

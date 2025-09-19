@@ -29,31 +29,29 @@ class SignUpView(APIView):
                     display_name=data.get('display_name', '')
                 )
 
-                # Save FirebaseUser locally
-                FirebaseUser.objects.create(
-                    uid=firebase_user.uid,
+                # Save User locally
+                User.objects.create(
+                    username=firebase_user.email,
                     email=firebase_user.email,
-                    display_name=firebase_user.display_name
+                    firebase_uid=firebase_user.uid,
+                    role=data['role'],
+                    phone=data.get('phone', '')
                 )
 
                 # Create UserProfile or BrokerProfile based on role
                 role = data['role']
+                user_obj = User.objects.get(firebase_uid=firebase_user.uid)
                 if role == 'user':
                     UserProfile.objects.create(
-                        uid=firebase_user.uid,
+                        user=user_obj,
                         full_name=data['display_name'],
-                        email=data['email'],
-                        phone=data.get('phone', '')
+                        kyc_verified=False
                     )
                 elif role == 'broker':
                     BrokerProfile.objects.create(
-                        uid=firebase_user.uid,
-                        full_name=data['display_name'],
-                        email=data['email'],
-                        phone=data.get('phone', ''),
-                        company_name=data.get('company_name', ''),
-                        license_id=data.get('license_id', ''),
-                        verified=False
+                        user=user_obj,
+                        verified=False,
+                        broker_code=data.get('license_id', '')
                     )
 
                 return Response({
@@ -74,26 +72,31 @@ class SignUpView(APIView):
 #  Login with Firebase ID Token
 class LoginView(APIView):
     def post(self, request):
-        id_token = request.data.get("idToken")
-        if not id_token:
-            return Response({'error': 'ID token is required'}, status=status.HTTP_400_BAD_REQUEST)
-
+        # Always wrap in try/except to ensure JSON error response
         try:
+            id_token = request.data.get("idToken")
+            if not id_token:
+                return Response({'ok': False, 'error': 'ID token is required'}, status=status.HTTP_400_BAD_REQUEST)
+
             decoded_token = auth.verify_id_token(id_token)
             uid = decoded_token.get('uid')
-            user = FirebaseUser.objects.filter(uid=uid).first()
+            user = User.objects.filter(firebase_uid=uid).first()
 
             if user:
                 return Response({
-                    'uid': user.uid,
+                    'ok': True,
+                    'uid': user.firebase_uid,
                     'email': user.email,
-                    'display_name': user.display_name
+                    'display_name': user.get_full_name() or user.username
                 }, status=status.HTTP_200_OK)
             else:
-                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'ok': False, 'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+            # Log the error and return JSON
+            import traceback, logging
+            logging.error(traceback.format_exc())
+            return Response({'ok': False, 'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 #  Get Currently Authenticated User
@@ -141,8 +144,8 @@ class VerifyingBrokerView(generics.UpdateAPIView):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.is_verified = True
-        instance.verified_at = now()
-        instance.verified_by = request.user  # request.user is FirebaseUser now
+        instance.verified_at = timezone.now()
+        instance.verified_by = request.user  # request.user is User now
         instance.save()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
@@ -209,4 +212,3 @@ class VerifyingBrokerView(APIView):
             },
             status=status.HTTP_200_OK
         )
-CurrentUserView= CurrentUserView.as_view()
