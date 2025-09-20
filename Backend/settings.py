@@ -217,8 +217,8 @@ CHANNEL_LAYERS = {
 # Redis URL for presence/other uses
 REDIS_URL = 'redis://127.0.0.1:6379/2'
 
-# Hosts
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'yourdomain.com']
+
+print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
 
 
 # Internationalization
