@@ -1,9 +1,6 @@
 import os
-allowed_hosts_env = os.environ.get('ALLOWED_HOSTS')
-if allowed_hosts_env:
-    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()]
-else:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else []
+print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
 
 csrf_trusted_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS')
 if csrf_trusted_origins_env:
