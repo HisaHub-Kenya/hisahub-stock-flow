@@ -1,4 +1,21 @@
 import os
+
+# ALLOWED_HOSTS configuration
+allowed_hosts_env = os.getenv("ALLOWED_HOSTS")
+if allowed_hosts_env:
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",") if host.strip()]
+else:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
+
+# CSRF_TRUSTED_ORIGINS configuration
+csrf_trusted_origins_env = os.getenv("CSRF_TRUSTED_ORIGINS")
+if csrf_trusted_origins_env:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_trusted_origins_env.split(",") if origin.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = ["https://hisahub-stock-flow-2.onrender.com"]
+print("CSRF_TRUSTED_ORIGINS:", CSRF_TRUSTED_ORIGINS)
+import os
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else []
 print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
 
