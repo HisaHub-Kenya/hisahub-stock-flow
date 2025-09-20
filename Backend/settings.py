@@ -1,3 +1,12 @@
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WhiteNoise Middleware for static files
+MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    # ...existing code...
+]
 # Debug logging configuration
 # Logs to both console and debug.log file for robust error tracking
 LOGGING = {
