@@ -1,5 +1,16 @@
 
 import React, { useState } from "react";
+
+
+// Helper to safely check PROD mode
+function isProdEnv() {
+  try {
+    // @ts-ignore
+    return typeof import.meta !== 'undefined' && import.meta.env && !!import.meta.env.PROD;
+  } catch {
+    return false;
+  }
+}
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -108,7 +119,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           <CardDescription className="text-off-white/80">
             Your gateway to the Nairobi Securities Exchange
           </CardDescription>
-          {import.meta.env.PROD && (
+          {isProdEnv() && (
             <div className="mt-2 p-2 bg-blue-500/20 border border-blue-500/30 rounded-lg">
               <p className="text-xs text-blue-300">
                 🚀 Demo Mode: Use any email/password to explore the app

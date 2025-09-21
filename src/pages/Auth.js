@@ -87,7 +87,11 @@ var Auth = function (_a) {
                     _a.sent();
                     toast.success("Login successful!");
                     onLogin();
-                    navigate('/'); // Redirect to home page
+                    if (location && location.state && location.state.redirectToTrade) {
+                        navigate('/trade');
+                    } else {
+                        navigate('/'); // Redirect to home page
+                    }
                     return [3 /*break*/, 5];
                 case 3:
                     error_1 = _a.sent();
@@ -128,7 +132,11 @@ var Auth = function (_a) {
                     _b.sent();
                     toast.success("Account created successfully!");
                     onLogin();
-                    navigate('/'); // Redirect to home page
+                    if (location && location.state && location.state.redirectToTrade) {
+                        navigate('/trade');
+                    } else {
+                        navigate('/'); // Redirect to home page
+                    }
                     return [3 /*break*/, 5];
                 case 3:
                     error_2 = _b.sent();
@@ -146,6 +154,8 @@ var Auth = function (_a) {
             }
         });
     }); };
+    // Add location from react-router-dom
+    var location = require('react-router-dom').useLocation();
     return (_jsx("div", { className: "min-h-screen flex items-center justify-center bg-primary px-4", children: _jsxs(Card, { className: "w-full max-w-md bg-white/10 border-secondary/20", children: [_jsxs(CardHeader, { className: "text-center", children: [_jsx("div", { className: "rounded-lg border-4 border-secondary p-3 mb-4 flex justify-center items-center mx-auto w-fit", children: _jsx("span", { className: "font-extrabold text-secondary text-4xl", style: { fontFamily: "'Poppins',sans-serif" }, children: "H" }) }), _jsx(CardTitle, { className: "text-2xl font-bold text-off-white", children: "Welcome to HisaHub" }), _jsx(CardDescription, { className: "text-off-white/80", children: "Your gateway to the Nairobi Securities Exchange" })] }), _jsx(CardContent, { children: _jsxs(Tabs, { defaultValue: "login", className: "w-full", children: [_jsxs(TabsList, { className: "grid w-full grid-cols-2 bg-white/10", children: [_jsx(TabsTrigger, { value: "login", className: "text-off-white", children: "Login" }), _jsx(TabsTrigger, { value: "signup", className: "text-off-white", children: "Sign Up" })] }), _jsx(TabsContent, { value: "login", className: "space-y-4", children: _jsxs("form", { onSubmit: handleLogin, className: "space-y-4", children: [_jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "email", className: "text-off-white", children: "Email" }), _jsx(Input, { id: "email", type: "email", value: loginForm.email, onChange: function (e) { return setLoginForm(__assign(__assign({}, loginForm), { email: e.target.value })); }, className: "bg-white/10 border-secondary/20 text-off-white", placeholder: "Enter your email", required: true })] }), _jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "password", className: "text-off-white", children: "Password" }), _jsx(Input, { id: "password", type: "password", value: loginForm.password, onChange: function (e) { return setLoginForm(__assign(__assign({}, loginForm), { password: e.target.value })); }, className: "bg-white/10 border-secondary/20 text-off-white", placeholder: "Enter your password", required: true })] }), _jsx(Button, { type: "submit", className: "w-full bg-secondary text-primary hover:bg-secondary/90", disabled: loading, children: loading ? "Logging in..." : "Login" })] }) }), _jsx(TabsContent, { value: "signup", className: "space-y-4", children: _jsxs("form", { onSubmit: handleSignup, className: "space-y-4", children: [_jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "name", className: "text-off-white", children: "Full Name" }), _jsx(Input, { id: "name", type: "text", value: signupForm.name, onChange: function (e) { return setSignupForm(__assign(__assign({}, signupForm), { name: e.target.value })); }, className: "bg-white/10 border-secondary/20 text-off-white", placeholder: "Enter your full name", required: true })] }), _jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "signup-email", className: "text-off-white", children: "Email" }), _jsx(Input, { id: "signup-email", type: "email", value: signupForm.email, onChange: function (e) { return setSignupForm(__assign(__assign({}, signupForm), { email: e.target.value })); }, className: "bg-white/10 border-secondary/20 text-off-white", placeholder: "Enter your email", required: true })] }), _jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "signup-password", className: "text-off-white", children: "Password" }), _jsx(Input, { id: "signup-password", type: "password", value: signupForm.password, onChange: function (e) { return setSignupForm(__assign(__assign({}, signupForm), { password: e.target.value })); }, className: "bg-white/10 border-secondary/20 text-off-white", placeholder: "Create a password", required: true })] }), _jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "confirm-password", className: "text-off-white", children: "Confirm Password" }), _jsx(Input, { id: "confirm-password", type: "password", value: signupForm.confirmPassword, onChange: function (e) { return setSignupForm(__assign(__assign({}, signupForm), { confirmPassword: e.target.value })); }, className: "bg-white/10 border-secondary/20 text-off-white", placeholder: "Confirm your password", required: true })] }), _jsx(Button, { type: "submit", className: "w-full bg-secondary text-primary hover:bg-secondary/90", disabled: loading, children: loading ? "Creating Account..." : "Create Account" })] }) })] }) })] }) }));
 };
 export default Auth;
