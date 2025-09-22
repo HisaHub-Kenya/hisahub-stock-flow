@@ -142,6 +142,16 @@ export var API_ENDPOINTS = {
 };
 // API Helper Functions
 export var apiHelpers = {
+    // Health check
+    healthCheck: async function () {
+        try {
+            const response = await apiClient.get('/health/');
+            return response.data;
+        } catch (error) {
+            console.error('Health check failed:', error.response ? error.response.status : error.message, error.response ? error.response.data : error);
+            throw error;
+        }
+    },
     // Portfolio operations
     depositFunds: function (amount_1) {
         return __awaiter(this, arguments, void 0, function (amount, method) {
