@@ -1,14 +1,19 @@
+
 import os
+from pathlib import Path
 
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     ".onrender.com",
-    os.getenv("RENDER_EXTERNAL_HOSTNAME", ""),
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "https://hisahub-stock-flow-2.onrender.com").split(",") if origin.strip()]
-from pathlib import Path
+    os.getenv("RENDER_EXTERNAL_HOSTNAME", "")
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "https://hisahub-stock-flow-2.onrender.com").split(",") if origin.strip()
+]
+
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
@@ -75,7 +80,6 @@ INSTALLED_APPS = [
 ]
 if "corsheaders" not in INSTALLED_APPS:
     INSTALLED_APPS += ["corsheaders"]
-]
 # Celery configuration
 
 
