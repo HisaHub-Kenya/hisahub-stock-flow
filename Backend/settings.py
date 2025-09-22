@@ -1,29 +1,11 @@
 import os
 
-# ALLOWED_HOSTS configuration
-allowed_hosts_env = os.getenv("ALLOWED_HOSTS")
-if allowed_hosts_env:
-    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",") if host.strip()]
-else:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
-print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
-
-# CSRF_TRUSTED_ORIGINS configuration
-csrf_trusted_origins_env = os.getenv("CSRF_TRUSTED_ORIGINS")
-if csrf_trusted_origins_env:
-    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_trusted_origins_env.split(",") if origin.strip()]
-else:
-    CSRF_TRUSTED_ORIGINS = ["https://hisahub-stock-flow-2.onrender.com"]
-print("CSRF_TRUSTED_ORIGINS:", CSRF_TRUSTED_ORIGINS)
-import os
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else []
-print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
-
-csrf_trusted_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS')
-if csrf_trusted_origins_env:
-    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_trusted_origins_env.split(',') if origin.strip()]
-else:
-    CSRF_TRUSTED_ORIGINS = []
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    ".onrender.com",
+    os.getenv("RENDER_EXTERNAL_HOSTNAME", ""),
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "https://hisahub-stock-flow-2.onrender.com").split(",") if origin.strip()]
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Static files (CSS, JavaScript, Images)
@@ -31,10 +13,6 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # WhiteNoise Middleware for static files
-MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    # ...existing code...
-]
 # Debug logging configuration
 # Logs to both console and debug.log file for robust error tracking
 LOGGING = {
@@ -67,7 +45,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Security
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = []
 
 # Firebase
 
@@ -95,7 +72,9 @@ INSTALLED_APPS = [
     'news',
     'Trading',
     'chat_App',
-    'corsheaders',
+]
+if "corsheaders" not in INSTALLED_APPS:
+    INSTALLED_APPS += ["corsheaders"]
 ]
 # Celery configuration
 
@@ -125,18 +104,17 @@ REST_FRAMEWORK = {
 
 # Global exception middleware must be first to catch all errors
 MIDDLEWARE = [
-    'Backend.middleware.error_handler.GlobalExceptionMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "Backend.middleware.error_handler.GlobalExceptionMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
-# URL routing
-ROOT_URLCONF = 'Backend.urls'
 
 # Templates
 TEMPLATES = [
@@ -161,11 +139,12 @@ ASGI_APPLICATION = 'Backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+        # Use DATABASE_URL env if set, else fallback to external Render URL, else internal
+        'NAME': 'dbhisahub',
+        'USER': 'adminhisahub',
+        'PASSWORD': 'jbIXgJzEtr5GHvS9jrNc9ZtIel5VQw3u',
+        'HOST': 'dpg-d378a60gjchc73c2762g-a.oregon-postgres.render.com',
+        'PORT': '5432',
     }
 }
 
@@ -191,7 +170,11 @@ CACHES = {
 }
 
 # CORS settings for testing
-CORS_ALLOW_ALL_ORIGINS = True  # For testing only! Use CORS_ALLOWED_ORIGINS in production.
+CORS_ALLOWED_ORIGINS = os.environ.get(
+    "CORS_ALLOWED_ORIGINS",
+    "https://hisahub-stock-flow.vercel.app,http://localhost:5173"
+).split(",")
+CORS_ALLOW_CREDENTIALS = True
 
 # mpesa cofigurations   
 
@@ -253,4 +236,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #     integrations=[DjangoIntegration()],
 #     traces_sample_rate=1.0,
 #     send_default_pii=True,
-# )
