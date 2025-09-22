@@ -33,9 +33,13 @@ LOGGING = {
     },
     "root": {"handlers": ["console", "file"], "level": "DEBUG"},
 }
+
 """
 Django settings for Backend project.
 """
+
+# Fix for Render error: add missing ROOT_URLCONF
+ROOT_URLCONF = "Backend.urls"
 
 
 from decouple import config
