@@ -157,6 +157,16 @@ DATABASES = {
 }
 
 # Default auto field
+# Custom error handlers for JSON responses
+from django.http import JsonResponse
+def custom_json_404(request, exception):
+    return JsonResponse({'error': 'Not found'}, status=404)
+def custom_json_500(request):
+    return JsonResponse({'error': 'Server error'}, status=500)
+
+HANDLER404 = 'Backend.settings.custom_json_404'
+HANDLER500 = 'Backend.settings.custom_json_500'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
  
 

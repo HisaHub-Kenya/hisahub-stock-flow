@@ -45,8 +45,9 @@ apiClient.interceptors.request.use(async (config) => {
 // Add response interceptor to handle token refresh and sanitization
 apiClient.interceptors.response.use(
   (response) => {
-    // Sanitize response data
-    if (response.data) {
+    // Only parse and sanitize if response is JSON
+    const contentType = response.headers['content-type'] || '';
+    if (contentType.includes('application/json') && response.data) {
       response.data = sanitizeApiResponse(response.data);
     }
     return response;
