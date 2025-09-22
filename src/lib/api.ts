@@ -1,21 +1,12 @@
   // Community user operations
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 import { getValidToken } from './auth';
 import { logout as authLogout } from './auth';
 import { sanitizeString, sanitizeNumber, sanitizeApiResponse, validateStockSymbol } from './security';
 
 // API Configuration
-function getApiBaseUrl(): string {
-  if (typeof globalThis !== 'undefined' && (globalThis as any).API_BASE_URL) {
-    return (globalThis as any).API_BASE_URL;
-  }
-  if (typeof process !== 'undefined' && process.env && process.env.API_BASE_URL) {
-    return process.env.API_BASE_URL;
-  }
-  return 'http://localhost:8000/api';
-}
-
-const API_BASE_URL = getApiBaseUrl();
+// API_BASE_URL is now imported from config.ts
 
 // Create axios instance with default config
 export const apiClient = axios.create({
@@ -45,29 +36,36 @@ apiClient.interceptors.request.use(async (config) => {
 // Add response interceptor to handle token refresh and sanitization
 apiClient.interceptors.response.use(
   (response) => {
-    // Only parse and sanitize if response is JSON
     const contentType = response.headers['content-type'] || '';
-    if (contentType.includes('application/json') && response.data) {
-      response.data = sanitizeApiResponse(response.data);
+    if (contentType.includes('application/json')) {
+      response.data = response.data ? sanitizeApiResponse(response.data) : {};
     }
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
-    
+    // Log error details for debugging
+    if (error.response) {
+      console.error('[api] Request failed:', {
+        url: error.config?.url,
+        status: error.response.status,
+        data: error.response.data,
+      });
+    } else if (error.request) {
+      console.error('[api] No response received:', error.request);
+    } else {
+      console.error('[api] Error setting up request:', error.message);
+    }
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
       const token = await getValidToken();
       if (token) {
         originalRequest.headers.Authorization = `Bearer ${token}`;
         return apiClient(originalRequest);
       }
     }
-    // If we reach here and response is 401, perform a logout to clear client state
     try {
       if (error.response?.status === 401) {
-        console.warn('[api] received 401 and could not recover; clearing auth state');
         await authLogout();
         try { localStorage.removeItem('hisahub-store'); } catch (e) { }
       }

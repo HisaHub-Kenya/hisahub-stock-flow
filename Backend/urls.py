@@ -11,10 +11,16 @@ def root_view(request):
 def health_view(request):
     return JsonResponse({"status": "ok"})
 
+
 schema_view = get_schema_view(
     openapi.Info(title="Stock API", default_version='v1'),
     public=True,
 )
+
+# Custom error handlers for JSON responses
+from Backend.settings import custom_json_404, custom_json_500
+handler404 = custom_json_404
+handler500 = custom_json_500
 
 urlpatterns = [
     path('', root_view),  # Optional: root welcome route
